@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace Html2Sql
 {
@@ -15,10 +16,14 @@ namespace Html2Sql
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite($"Data Source={DbPath}");
+        {
+            options.UseSqlite($"Data Source={DbPath}");
 
+          
+        }
         public DbSet<Member> Members { get; set; }
         public DbSet<Vote> Votes { get; set; }
         public DbSet<VotingSession> VotingSessions { get; set; }
+        public DbSet<AttendanceTypeTbl> AttendeceTypes { get; set; }
     }
 }

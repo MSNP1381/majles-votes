@@ -20,6 +20,36 @@ namespace Html2Sql.Controllers
 
             _logger = logger;
             _context = context;
+
+            var l = new List<AttendanceTypeTbl>
+            {
+            new AttendanceTypeTbl
+            {
+                Key= (int)AttendanceType.absence,
+                Value="غیبت"
+            }, new AttendanceTypeTbl
+            {
+                Key= (int)AttendanceType.nonParticipation,
+                Value="عدم مشارکت"
+            }, new AttendanceTypeTbl
+            {
+                Key= (int)AttendanceType.against,
+                Value="مخالف"
+            }, new AttendanceTypeTbl
+            {
+                Key= (int)AttendanceType.favor,
+                Value="موافق"
+            }, new AttendanceTypeTbl
+            {
+                Key= (int)AttendanceType.abstaining,
+                Value="ممتنع"
+            },
+            };
+               var all_att=context.AttendeceTypes.ToList();
+            var nl=l.Where(x =>!all_att.Any(t=>t.Key==x.Key));
+            context.AddRange(nl);
+            context.SaveChanges();
+
         }
         private AttendanceType stat2enum(string stat)
         {
@@ -48,7 +78,9 @@ namespace Html2Sql.Controllers
         [HttpGet(Name = "get")]
         public ActionResult Get()
         {
-            var st =new StreamWriter(@"C:\Users\muhammadS\Desktop\x.txt");
+            return Ok();
+
+            var st = new StreamWriter(@"C:\Users\muhammadS\Desktop\x.txt");
             StreamReader r = new StreamReader(@"C:\Users\muhammadS\Desktop\majles\parsed.json");
             string json = r.ReadToEnd();
             r.Close();
@@ -117,7 +149,7 @@ namespace Html2Sql.Controllers
                             Family = family,
                             MemId = mem_id,
                             //Image = b64Img,
-                            ImageUrl=img_url,
+                            ImageUrl = img_url,
                             Region = city,
                         };
                         var res = _context.Members.Add(member);
