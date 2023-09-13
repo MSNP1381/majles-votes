@@ -70,7 +70,10 @@ namespace Html2Sql.Controllers
 
 
         }
-        private void tqdm(int index, int len, DateTime time)
+
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [NonAction]
+        public static void tqdm(int index, int len, DateTime time)
         {
             var tmp_time = TimeSpan.FromSeconds(((DateTime.Now - time).TotalSeconds * (len - index))).ToString("h'h 'm'm 's's'");
             Console.WriteLine($"{index}/{len} it/s:{(1 / ((DateTime.Now - time).TotalSeconds + .00001)).ToString("F2")} time remain:{tmp_time}");
@@ -78,7 +81,6 @@ namespace Html2Sql.Controllers
         [HttpGet(Name = "get")]
         public ActionResult Get()
         {
-            return Ok();
 
             var st = new StreamWriter(@"C:\Users\muhammadS\Desktop\x.txt");
             StreamReader r = new StreamReader(@"C:\Users\muhammadS\Desktop\majles\parsed.json");
@@ -177,8 +179,5 @@ namespace Html2Sql.Controllers
             public string url { get; set; }
         }
     }
-    public static class MyExtensions
-    {
-        public static string s_(this string s) => Regex.Replace(s, @"\s+", " ").Replace("\n", "");
-    }
+
 }

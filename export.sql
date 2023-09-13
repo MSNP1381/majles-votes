@@ -1,7 +1,7 @@
 SELECT
 	title as session_title,
-Against as	'Session Against',
-Favor as	'Session Favor',
+	Against as	'Session Against',
+	Favor as	'Session Favor',
 	Abstaining as 'Session Abstaining',
 	Name,
 	Family,

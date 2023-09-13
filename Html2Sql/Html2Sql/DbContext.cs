@@ -25,5 +25,7 @@ namespace Html2Sql
         public DbSet<Vote> Votes { get; set; }
         public DbSet<VotingSession> VotingSessions { get; set; }
         public DbSet<AttendanceTypeTbl> AttendeceTypes { get; set; }
+        public DbSet<MemeberDetails> MemebersDetails { get; set; }
+        public DbSet<Membership> Memberships { get; set; }
     }
 }
