@@ -1,9 +1,9 @@
-﻿using HtmlAgilityPack;
+﻿using Html2Sql.tools;
+using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using System.Text.RegularExpressions;
-using Html2Sql.tools;
-using System.Text;
+
+using Yaap;
 
 namespace Html2Sql.Controllers
 {
@@ -11,77 +11,83 @@ namespace Html2Sql.Controllers
     [Route("[controller]")]
     public class Main : ControllerBase
     {
-
         private string base_url = "https://trvotes.parliran.ir";
         private readonly ILogger<Main> _logger;
         private readonly DataContext _context;
+
         public Main(ILogger<Main> logger, DataContext context)
         {
-
             _logger = logger;
             _context = context;
 
             var l = new List<AttendanceTypeTbl>
             {
-            new AttendanceTypeTbl
-            {
-                Key= (int)AttendanceType.absence,
-                Value="غیبت"
-            }, new AttendanceTypeTbl
-            {
-                Key= (int)AttendanceType.nonParticipation,
-                Value="عدم مشارکت"
-            }, new AttendanceTypeTbl
-            {
-                Key= (int)AttendanceType.against,
-                Value="مخالف"
-            }, new AttendanceTypeTbl
-            {
-                Key= (int)AttendanceType.favor,
-                Value="موافق"
-            }, new AttendanceTypeTbl
-            {
-                Key= (int)AttendanceType.abstaining,
-                Value="ممتنع"
-            },
+                new AttendanceTypeTbl
+                {
+                    type_key = (int)AttendanceType.absence,
+                    type_value = "غیبت"
+                },
+                new AttendanceTypeTbl
+                {
+                    type_key = (int)AttendanceType.nonParticipation,
+                    type_value = "عدم مشارکت"
+                },
+                new AttendanceTypeTbl
+                {
+                    type_key = (int)AttendanceType.against,
+                    type_value = "مخالف"
+                },
+                new AttendanceTypeTbl
+                {
+                    type_key = (int)AttendanceType.favor,
+                    type_value = "موافق"
+                },
+                new AttendanceTypeTbl
+                {
+                    type_key = (int)AttendanceType.abstaining,
+                    type_value = "ممتنع"
+                },
             };
-               var all_att=context.AttendeceTypes.ToList();
-            var nl=l.Where(x =>!all_att.Any(t=>t.Key==x.Key));
+            var all_att = context.AttendeceTypes.ToList();
+            var nl = l.Where(x => !all_att.Any(t => t.type_key == x.type_key));
             context.AddRange(nl);
             context.SaveChanges();
-
         }
+
         private AttendanceType stat2enum(string stat)
         {
             stat = stat.Replace(" ", "").Replace("\n", "");
             switch (stat)
             {
-                case "----": return AttendanceType.absence;
-                case "عدممشارکت": return AttendanceType.nonParticipation;
+                case "----":
+                    return AttendanceType.absence;
+                case "عدممشارکت":
+                    return AttendanceType.nonParticipation;
                 case "مخالف":
                     return AttendanceType.against;
                 case "موافق":
                     return AttendanceType.favor;
                 case "ممتنع":
                     return AttendanceType.abstaining;
-
             }
             return AttendanceType.absence;
-
-
         }
 
         [ApiExplorerSettings(IgnoreApi = true)]
         [NonAction]
         public static void tqdm(int index, int len, DateTime time)
         {
-            var tmp_time = TimeSpan.FromSeconds(((DateTime.Now - time).TotalSeconds * (len - index))).ToString("h'h 'm'm 's's'");
-            Console.WriteLine($"{index}/{len} it/s:{(1 / ((DateTime.Now - time).TotalSeconds + .00001)).ToString("F2")} time remain:{tmp_time}");
+            var tmp_time = TimeSpan
+                .FromSeconds(((DateTime.Now - time).TotalSeconds * (len - index)))
+                .ToString("h'h 'm'm 's's'");
+            Console.WriteLine(
+                $"{index}/{len} it/s:{(1 / ((DateTime.Now - time).TotalSeconds + .00001)).ToString("F2")} time remain:{tmp_time}"
+            );
         }
-        [HttpGet(Name = "get")]
-        public ActionResult Get()
-        {
 
+        [HttpGet(Name = "get")]
+        public async Task<ActionResult> Get()
+        {
             var st = new StreamWriter(@"C:\Users\muhammadS\Desktop\x.txt");
             StreamReader r = new StreamReader(@"C:\Users\muhammadS\Desktop\majles\parsed.json");
             string json = r.ReadToEnd();
@@ -89,23 +95,23 @@ namespace Html2Sql.Controllers
             List<Item>? items = JsonConvert.DeserializeObject<List<Item>>(json);
             var len_item = items.Count();
             var f_it = DateTime.Now;
-            for (int index = 0; index < len_item; index++)
+            foreach (var i in items.Yaap())
             {
-                //Console.Clear();
-                Console.OutputEncoding = Encoding.UTF8;
-                tqdm(index, len_item, f_it);
                 f_it = DateTime.Now;
-                var i = items[index];
+                //var i = items[index];
                 var id = i.url.Split("/").Last();
                 var jdate = i.time;
                 var hdoc = new HtmlDocument();
-                var html = new StreamReader(@"C:\Users\muhammadS\Desktop\majles\pages\" + id + ".html");
+                var html = new StreamReader(
+                    @"C:\Users\muhammadS\Desktop\majles\pages\" + id + ".html"
+                );
                 hdoc.Load(html);
-                var vote_title = hdoc.QuerySelector("#page-wrapper > div.row > div.col-lg-12 > div > div.panel-footer").InnerText;
-                vote_title = vote_title.s_();
-                var stats = hdoc
-                    .QuerySelectorAll(".inner h3")
-                    .Select(x => x.InnerText).ToArray();
+                var vote_title = hdoc.QuerySelector(
+                    "#page-wrapper > div.row > div.col-lg-12 > div > div.panel-footer"
+                )
+                    .InnerText.s_();
+
+                var stats = hdoc.QuerySelectorAll(".inner h3").Select(x => x.InnerText).ToArray();
                 var favor = int.Parse(stats[0]);
                 var against = int.Parse(stats[1]);
                 var abstaining = int.Parse(stats[2]);
@@ -131,9 +137,10 @@ namespace Html2Sql.Controllers
                     var row = rows[index_r];
 
                     var tmp = row.QuerySelectorAll("th");
-                    if (tmp.Count() == 0) continue;
-                    var img_url = this.base_url + tmp[0].QuerySelector("img")
-                        .GetAttributeValue("src", "");
+                    if (tmp.Count() == 0)
+                        continue;
+                    var img_url =
+                        this.base_url + tmp[0].QuerySelector("img").GetAttributeValue("src", "");
                     var mem_id = int.Parse(img_url.Split('/').Last().Split('.')[0]);
                     var name = tmp[1].InnerText.s_();
                     var family_city = tmp[2].InnerText.s_().Split('(', ')');
@@ -141,7 +148,11 @@ namespace Html2Sql.Controllers
                     var city = family_city[1];
                     var stat = stat2enum(tmp[4].InnerText.s_());
                     st.WriteLine($"{tmp[4].InnerText.s_()} => {stat2enum(tmp[4].InnerText.s_())}");
-                    var member = _context.Members.FirstOrDefault(x => (x.Name == name && x.Family == family && city == x.Region) || x.MemId == mem_id);
+                    var member = _context.Members.FirstOrDefault(
+                        x =>
+                            (x.Name == name && x.Family == family && city == x.Region)
+                            || x.MemId == mem_id
+                    );
                     if (member == null)
                     {
                         //var b64Img = utils.GetImageAsBase64Url(img_url);
@@ -154,8 +165,9 @@ namespace Html2Sql.Controllers
                             ImageUrl = img_url,
                             Region = city,
                         };
-                        var res = _context.Members.Add(member);
-                        if (res.State != Microsoft.EntityFrameworkCore.EntityState.Added) return StatusCode(501, member);
+                        var res = await _context.Members.AddAsync(member);
+                        if (res.State != Microsoft.EntityFrameworkCore.EntityState.Added)
+                            return StatusCode(501, member);
                     }
 
                     var vote = new Vote
@@ -166,9 +178,27 @@ namespace Html2Sql.Controllers
                     };
                     voting_ses.Votes.Add(vote);
                 }
-                _context.Add(voting_ses);
-                _context.SaveChangesAsync();
+                await _context.AddAsync(voting_ses);
+                await _context.SaveChangesAsync();
             }
+            return Ok();
+        }
+
+        [HttpPost(Name = "AddFirstVoteDate")]
+        public ActionResult Post()
+        {
+            var t = _context.Votes
+                .GroupBy(x => x.MemberId)
+                .Select(x => x.MinBy(y => y.Date))
+                .ToList();
+            var mem_date = t.Select(x =>
+            {
+                var tmp = x.Member;
+                tmp.jFirstVote = x.jdate;
+                return tmp;
+            });
+            _context.UpdateRange(mem_date);
+            _context.SaveChangesAsync();
             return Ok();
         }
 
@@ -179,5 +209,4 @@ namespace Html2Sql.Controllers
             public string url { get; set; }
         }
     }
-
 }

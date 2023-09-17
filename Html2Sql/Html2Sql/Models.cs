@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
-using MongoDB.Bson;
+﻿using MongoDB.Bson;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -14,12 +13,12 @@ namespace Html2Sql
         favor,
         abstaining
     }
+
     public enum EducationLevel
     {
         bachelor,
         master,
         phd,
-
     }
 
     public enum BoardType
@@ -30,6 +29,7 @@ namespace Html2Sql
         BoardDirector,
         None,
     }
+
     public class Member
     {
         public int Id { get; set; }
@@ -39,13 +39,33 @@ namespace Html2Sql
         public string Region { get; set; }
         public string ImageUrl { get; set; }
         public string? Image { get; set; }
+        public string ?jFirstVote { get; set; }
+        public DateTime FirstVote
+        {
+            get
+            {
+                try
+                {
+                    CultureInfo persianCulture = new CultureInfo("fa-IR");
+                    DateTime persianDateTime = DateTime.ParseExact(jFirstVote, "yyyy/MM/dd", persianCulture);
+                    return persianDateTime;
+                }
+                catch
+                {
+                    return new DateTime(1970,1,1,0,0,0);
+                }
+            }
+            set { }
+        }
         public virtual List<Vote> Votes { get; set; }
     }
+
     public class Vote
     {
         public int Id { get; set; }
 
         public int MemberId { get; set; }
+
         [ForeignKey("MemberId")]
         public virtual Member Member { get; set; }
         public AttendanceType activity { get; set; }
@@ -58,15 +78,14 @@ namespace Html2Sql
                 DateTime persianDateTime = DateTime.ParseExact(jdate, "yyyy/MM/dd", persianCulture);
                 return persianDateTime;
             }
-            set
-            {
-
-            }
+            set { }
         }
         public int VotingSessionId { get; set; }
+
         [ForeignKey("VotingSessionId")]
         public VotingSession VotingSession { get; set; }
     }
+
     public class VotingSession
     {
         public int Id { get; set; }
@@ -85,18 +104,17 @@ namespace Html2Sql
                 DateTime persianDateTime = DateTime.ParseExact(jdate, "yyyy/MM/dd", persianCulture);
                 return persianDateTime;
             }
-            set
-            {
-
-            }
+            set { }
         }
     }
+
     public class AttendanceTypeTbl
     {
         public int Id { get; set; }
-        public int Key { get; set; }
-        public string? Value { get; set; }
+        public int type_key { get; set; }
+        public string? type_value { get; set; }
     }
+    [NotMapped]
     public class MemeberDetails
     {
         public int MemId { get; set; }
@@ -115,14 +133,12 @@ namespace Html2Sql
                 CultureInfo persianCulture = new CultureInfo("fa-IR");
                 try
                 {
-
                     return DateTime.ParseExact(jBirth, "yyyy/MM/dd", persianCulture);
                 }
                 catch
                 {
                     return new DateTime();
                 }
-
             }
             set { }
         }
@@ -152,6 +168,7 @@ namespace Html2Sql
         public List<News_Speeches> News { get; set; }
         public List<News_Speeches> Speeches { get; set; }
     }
+
     public class Education
     {
         public EducationLevel Level;
@@ -159,13 +176,11 @@ namespace Html2Sql
         public bool is_graduated;
         public string EducationLevelName
         {
-            get
-            {
-                return Enum.GetName(typeof(EducationLevel), this.Level);
-            }
+            get { return Enum.GetName(typeof(EducationLevel), this.Level); }
             set { }
         }
     }
+
     //public class MemeberDetailsCommission
     //{
     //    public int CommissionId { get; set; }
@@ -182,12 +197,12 @@ namespace Html2Sql
 
         Friendship = 2,
     }
-
     public class Membership
     {
         public int Id { get; set; }
         public string Title { get; set; }
         public int? Year { get; set; }
+
         //public List<MemeberDetailsCommission> Memebers { get; set; }
         public string Url { get; set; }
         public MembershipType Type { get; set; }
@@ -200,6 +215,7 @@ namespace Html2Sql
         public string Name { get; set; }
         public Dictionary<int, string> Value { get; set; }
     }
+    [NotMapped]
     public class BoardMember
     {
         public BoardType BoardType { get; set; }
@@ -207,10 +223,7 @@ namespace Html2Sql
 
         public string? BoardTypeName
         {
-            get
-            {
-                return Enum.GetName(typeof(BoardType), this.BoardType);
-            }
+            get { return Enum.GetName(typeof(BoardType), this.BoardType); }
             set { }
         }
     }
@@ -228,7 +241,11 @@ namespace Html2Sql
                 try
                 {
                     CultureInfo persianCulture = new CultureInfo("fa-IR");
-                    DateTime persianDateTime = DateTime.ParseExact(jDate, "dd MMMM yyyy", persianCulture);
+                    DateTime persianDateTime = DateTime.ParseExact(
+                        jDate,
+                        "dd MMMM yyyy",
+                        persianCulture
+                    );
                     return persianDateTime;
                 }
                 catch
@@ -236,10 +253,7 @@ namespace Html2Sql
                     return new DateTime(1970, 1, 1);
                 }
             }
-            set
-            {
-
-            }
+            set { }
         }
     }
 }

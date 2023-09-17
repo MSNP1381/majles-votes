@@ -8,3 +8,4 @@ all_members/pages/*
 /all_members/pages
 /all_members/speeches
 /all_members/news
+/votes.csv

@@ -1,5 +1,4 @@
 using Html2Sql;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 

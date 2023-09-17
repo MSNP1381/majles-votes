@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
 
 namespace Html2Sql
 {
@@ -19,13 +18,12 @@ namespace Html2Sql
         {
             options.UseSqlite($"Data Source={DbPath}");
 
-          
+
         }
         public DbSet<Member> Members { get; set; }
         public DbSet<Vote> Votes { get; set; }
         public DbSet<VotingSession> VotingSessions { get; set; }
         public DbSet<AttendanceTypeTbl> AttendeceTypes { get; set; }
-        public DbSet<MemeberDetails> MemebersDetails { get; set; }
-        public DbSet<Membership> Memberships { get; set; }
+ 
     }
 }
