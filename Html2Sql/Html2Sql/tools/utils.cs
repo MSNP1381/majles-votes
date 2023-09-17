@@ -5,8 +5,9 @@ namespace Html2Sql.tools
 {
     public static class MyExtensions
     {
-        public static string s_(this string s) => Regex.Replace(s, @"\s+", " ").Trim().Replace("\n", "").Replace("\r", "");
+        public static string s_(this string s) => Regex.Replace(s, @"\s+", " ").Trim().Replace("\n", "").Replace("\r", "").Trim();
         public static int toInt32(this string s) => int.Parse(s);
+
         public static string css2text(this HtmlDocument hdoc, string css) => hdoc.QuerySelector(css).InnerText.s_();
         public static string css2text(this HtmlNode hnode, string css) => hnode.QuerySelector(css).InnerText.s_();
         public static HtmlNode? findByTextAndCss(this HtmlNode hnode, string css, string text)
@@ -16,7 +17,7 @@ namespace Html2Sql.tools
    =>
        hnode.QuerySelectorAll(css).FirstOrDefault(x => x.InnerText.Contains(text));
     }
-    public class utils
+    public static class utils
     {
 
         static Dictionary<string, int> farsiNumbers = new Dictionary<string, int>()
@@ -51,9 +52,21 @@ namespace Html2Sql.tools
                 return "image/jpeg;base64," + Convert.ToBase64String(bytes);
             }
         }
-        public static int persianNum2int(string s)  {s=s.Trim();return farsiNumbers[s];}
+        public static int persianNum2int(string s) => farsiNumbers.GetValueOrDefault(s.Trim(), 0);
 
-        
+        public static async Task<string> GetUrlHtml(string url)
+        {
+            var client = new HttpClient();
+            var request = new HttpRequestMessage();
+            request.RequestUri = new Uri(url);
+            request.Method = HttpMethod.Get;
+
+            request.Headers.Add("Accept", "*/*");
+            request.Headers.Add("User-Agent", "Thunder Client (https://www.thunderclient.com)");
+
+            var response = await client.SendAsync(request);
+            return await response.Content.ReadAsStringAsync();
+        }
 
         }
     }

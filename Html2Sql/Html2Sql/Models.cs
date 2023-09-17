@@ -2,6 +2,7 @@
 using MongoDB.Bson;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Html2Sql
 {
@@ -98,15 +99,15 @@ namespace Html2Sql
     }
     public class MemeberDetails
     {
+        public int MemId { get; set; }
         public ObjectId Id { get; set; }
         public string Url { get; set; }
-        public List<BoardType> BoardType { get; set; } = new();
-        public List<int> BoardYear { get; set; } = new();
+        public List<BoardMember> BoardHist { get; set; } = new();
         public string ChooseRegion { get; set; }
         public string FullName { get; set; }
         public string jBirth { get; set; }
-        public string religious { get; set; } = "اسلام،شیعه";
-        public List<int> History { get; set; }= new() { 11 };
+        public string Religion { get; set; } = "اسلام،شیعه";
+        public List<int> History { get; set; } = new() { 11 };
         public DateTime BirthDate
         {
             get
@@ -115,7 +116,7 @@ namespace Html2Sql
                 try
                 {
 
-                return DateTime.ParseExact(jBirth, "yyyy/MM/dd", persianCulture);
+                    return DateTime.ParseExact(jBirth, "yyyy/MM/dd", persianCulture);
                 }
                 catch
                 {
@@ -126,16 +127,45 @@ namespace Html2Sql
             set { }
         }
         public string BirthPlace { get; set; }
-        public List<Education> Education { get; set; }
+        public List<Education> Educations { get; set; }
         public string ChooseDate { get; set; }
         public string ChooseState { get; set; }
         public int VotesRecived { get; set; }
         public int VotesTotal { get; set; }
         public string jcertified { get; set; }
         public List<Membership> Memberships { get; set; }
-
+        public float VotePercent
+        {
+            get
+            {
+                try
+                {
+                    return VotesRecived / VotesTotal;
+                }
+                catch
+                {
+                    return 0;
+                }
+            }
+            set { }
+        }
+        public List<News_Speeches> News { get; set; }
+        public List<News_Speeches> Speeches { get; set; }
     }
-    public record Education(EducationLevel Level,string educationName,bool is_graduated);
+    public class Education
+    {
+        public EducationLevel Level;
+        public string educationName;
+        public bool is_graduated;
+        public string EducationLevelName
+        {
+            get
+            {
+                return Enum.GetName(typeof(EducationLevel), this.Level);
+            }
+            set { }
+        }
+    }
     //public class MemeberDetailsCommission
     //{
     //    public int CommissionId { get; set; }
@@ -147,10 +177,10 @@ namespace Html2Sql
     //}
     public enum MembershipType
     {
-        Commission=0,
-        Fraction=1,
-    
-        Friendship=2,
+        Commission = 0,
+        Fraction = 1,
+
+        Friendship = 2,
     }
 
     public class Membership
@@ -165,5 +195,51 @@ namespace Html2Sql
         //[ForeignKey("MemeberId")]
         //public MemeberDetails Memeber { get; set; }
     }
+    public class EnumVal
+    {
+        public string Name { get; set; }
+        public Dictionary<int, string> Value { get; set; }
+    }
+    public class BoardMember
+    {
+        public BoardType BoardType { get; set; }
+        public int BoardYear { get; set; }
 
+        public string? BoardTypeName
+        {
+            get
+            {
+                return Enum.GetName(typeof(BoardType), this.BoardType);
+            }
+            set { }
+        }
+    }
+
+    public class News_Speeches
+    {
+        public string Title { get; set; }
+        public string Url { get; set; }
+        public string jDate { get; set; }
+        public string Desc { get; set; }
+        public DateTime Date
+        {
+            get
+            {
+                try
+                {
+                    CultureInfo persianCulture = new CultureInfo("fa-IR");
+                    DateTime persianDateTime = DateTime.ParseExact(jDate, "dd MMMM yyyy", persianCulture);
+                    return persianDateTime;
+                }
+                catch
+                {
+                    return new DateTime(1970, 1, 1);
+                }
+            }
+            set
+            {
+
+            }
+        }
+    }
 }

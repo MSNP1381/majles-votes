@@ -4,3 +4,7 @@ Html2Sql/Html2Sql/obj
 Html2Sql/Html2Sql/Migrations
 Html2Sql/.vs
 all_members/pages/*
+/copy.ps1
+/all_members/pages
+/all_members/speeches
+/all_members/news

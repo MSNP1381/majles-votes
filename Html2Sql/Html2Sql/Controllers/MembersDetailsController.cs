@@ -1,14 +1,14 @@
 ﻿using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
 using Html2Sql.tools;
-using System.Drawing.Drawing2D;
-using System.Security.Policy;
 using Newtonsoft.Json;
 using MongoDB.Driver;
-using System.Collections.Generic;
+using Yaap;
+using System.Drawing;
+using Microsoft.OpenApi.Extensions;
 using MongoDB.Bson;
+using System.IO;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace Html2Sql.Controllers
 {
@@ -17,24 +17,23 @@ namespace Html2Sql.Controllers
     public class MembersDetailsController : ControllerBase
     {
 
-        private string base_url = "https://www.parliran.ir";
-        private readonly ILogger<Main> _logger;
+        private const string base_url = "https://www.parliran.ir";
         private readonly IMongoCollection<MemeberDetails> _context;
-        public MembersDetailsController(ILogger<Main> logger)
+
+        public MembersDetailsController()
         {
-
-            _logger = logger;
-
             var mongoClient = new MongoClient(
                 "mongodb://localhost:27017");
 
             var mongoDatabase = mongoClient.GetDatabase("majles");
 
+
+
+
             _context = mongoDatabase.GetCollection<MemeberDetails>("membersDetails");
         }
 
-
-        public class RawMember { public int index = 0; public string url; public List<BoardType>? BoardType; public List<int>? BoardYear; }
+        public class RawMember { public int index = 0; public string url; public List<BoardType> BoardType = new(); public List<int> BoardYear = new(); }
 
         private int year2int(string year)
         {
@@ -51,17 +50,17 @@ namespace Html2Sql.Controllers
             {
                 is_grad = false;
             }
-            if (s.Contains("ارشد"))
+            if (s.Contains("ارشد") || (s.Contains("فوق") && s.Contains("لیسانس")))
             {
-                return new Education(EducationLevel.master, s, is_grad);
+                return new Education { Level = EducationLevel.master, educationName = s, is_graduated = is_grad };
             }
             if (s.Contains("دکتر"))
             {
-                return new Education(EducationLevel.phd, s, is_grad);
+                return new Education { Level = EducationLevel.phd, educationName = s, is_graduated = is_grad };
             }
             else
             {
-                return new Education(EducationLevel.bachelor, s, is_grad);
+                return new Education { Level = EducationLevel.bachelor, educationName = s, is_graduated = is_grad };
             }
         }
         private BoardType title2BoardType(string title)
@@ -77,6 +76,7 @@ namespace Html2Sql.Controllers
             var hdoc = new HtmlDocument();
             var html = new StreamReader(@"C:\Users\muhammadS\Desktop\majles\all_members\index.html");
             hdoc.Load(html);
+            html.Close();
             //members
             var membersEl = hdoc.QuerySelector(".inner-sec__content.pb-0.pt-0");
             var mem_contents = membersEl.QuerySelectorAll(".members__item");
@@ -87,7 +87,7 @@ namespace Html2Sql.Controllers
                     .Split("/").Last().Split(".")[0].toInt32();
 
                 var url = base_url + member.QuerySelector("a").GetAttributeValue("href", "") ?? "";
-                var mem = new RawMember { index = mem_id, url = url, BoardType = null, BoardYear = null };
+                var mem = new RawMember { index = mem_id, url = url, BoardType = new(), BoardYear = new() };
                 members.Add(mem);
             }
             //boards
@@ -109,7 +109,7 @@ namespace Html2Sql.Controllers
                     var title_s = title != null ? title.InnerText.s_() : "";
 
                     var cond = members.FirstOrDefault(w => w.url == url);
-                    if (cond.BoardYear == null)
+                    if (cond == null)
                     {
                         var mem = new RawMember
                         {
@@ -117,6 +117,7 @@ namespace Html2Sql.Controllers
                             BoardType = new List<BoardType> { title2BoardType(title_s) },
                             BoardYear = new List<int> { year.yearNo }
                         };
+                        members.Add(mem);
                     }
                     else
                     {
@@ -138,78 +139,82 @@ namespace Html2Sql.Controllers
             var sw1 = new StreamWriter(@"C:\Users\muhammadS\Desktop\majles\all_members\parsed.json");
             sw1.Write(parsed);
             sw1.Close();
-
-            var dx = DateTime.Now;
-            for (var index = 0; index < raw.Count; index++)
+            foreach (var item in raw.Yaap(total: raw.Count))
             {
-                using (var sw2 = new StreamWriter($"C:\\Users\\muhammadS\\Desktop\\majles\\all_members\\pages\\{raw[index].index}.html"))
+                using (var sw2 = new StreamWriter($"C:\\Users\\muhammadS\\Desktop\\majles\\all_members\\pages\\{item.index}.html"))
                 {
-                    Main.tqdm(index, raw.Count, dx);
-                    dx = DateTime.Now;
 
-                    var client = new HttpClient();
-                    var request = new HttpRequestMessage();
-                    request.RequestUri = new Uri(raw[index].url);
-                    request.Method = HttpMethod.Get;
-
-                    request.Headers.Add("Accept", "*/*");
-                    request.Headers.Add("User-Agent", "Thunder Client (https://www.thunderclient.com)");
-
-                    var response = await client.SendAsync(request);
-                    var result = await response.Content.ReadAsStringAsync();
+                    var result = await utils.GetUrlHtml(item.url);
+                    result = result.Replace("thirdYear", "سال سوم");
                     sw2.Write(result);
 
                 }
             }
+
             return raw;
         }
 
-        [HttpGet("AddAllMembers2Sql")]
-        public void Get()
+        [HttpGet("AddAllMembers2Mongo")]
+        public void Get(bool do_drop = false)
         {
-            var keys = new List<List<string>>();
+            if (do_drop) _context.Database.DropCollection("membersDetails");
+            var keys = new List<string>();
             var json = new StreamReader(@"C:\Users\muhammadS\Desktop\majles\all_members\parsed.json");
-            //var keysw = new StreamWriter(@"C:\Users\muhammadS\Desktop\x.json");
+            var keysw = new StreamWriter(@"C:\Users\muhammadS\Desktop\x.json");
             var t = JsonConvert.DeserializeObject<List<RawMember>>(json.ReadToEnd());
-            var t_dt = DateTime.Now;
-            for (var t_index = 0; t_index < t.Count; t_index++)
+            json.Close();
+
+            foreach (var raw in t.Yaap(total: t.Count))
             {
-                Main.tqdm(t_index + 1, t.Count, t_dt);
-                t_dt = DateTime.Now;
-                var raw = t[t_index];
-                Console.WriteLine($"{ raw.index}");
+
+                YaapConsole.WriteLine($"{raw.index}");
                 var member = new MemeberDetails();
                 member.Url = raw.url;
                 var hdoc = new HtmlDocument();
                 var html = new StreamReader
                     ($"C:\\Users\\muhammadS\\Desktop\\majles\\all_members\\pages\\{raw.index}.html");
                 hdoc.Load(html);
-                member.BoardType = raw.BoardType ?? new();
-                member.BoardYear = raw.BoardYear ?? new();
+                html.Close();
+                member.MemId = raw.index;
+
+                var hists=raw.BoardYear.Zip(raw.BoardType).Select(x =>
+                new BoardMember
+                {
+                    BoardYear = x.First,
+                    BoardType = x.Second
+                });
+                member.BoardHist.AddRange(hists);
                 member.FullName = hdoc.QuerySelector(".agent-data__title").InnerText.s_();
                 member.ChooseRegion = hdoc.QuerySelector(".agent-data__position")
                                   .InnerText.Replace("نماینده", "").s_();
                 var dataDict_tmp = hdoc.QuerySelectorAll(".agent-data__list .item")
                                .Select(x => new { k = x.css2text(".label"), v = x.css2text(".data") }).ToList();
-                        var dataDict   = dataDict_tmp.ToDictionary(x => x.k, x => x.v);
-                keys.Append( dataDict.Keys.ToList());
-                var _3=JsonConvert.SerializeObject(keys);
-                //keysw.Write(_3);
-                member.religious = dataDict.GetValueOrDefault("", "");
-
-
+                var dataDict = dataDict_tmp.ToDictionary(x => x.k, x => x.v);
+                keys.AddRange(dataDict.Keys.ToList());
+                var tmp_religion = "";
+                if (dataDict.TryGetValue("دین و مذهب", out tmp_religion))
+                    member.Religion = tmp_religion;
                 member.jBirth = dataDict.GetValueOrDefault("تاریخ تولد", "");
                 member.BirthPlace = dataDict.GetValueOrDefault("محل تولد", "");
-                member.Education = dataDict.GetValueOrDefault("تحصیلات دانشگاهی", "").Split('،').Select(x => educationText2obj(x)).ToList();
+                member.Educations = dataDict.GetValueOrDefault("تحصیلات دانشگاهی", "").Split('،').Select(x => educationText2obj(x)).ToList();
                 member.jcertified = dataDict.GetValueOrDefault("تاریخ انتخاب", "");
                 member.ChooseState = dataDict.GetValueOrDefault("مرحله انتخاب", "");
+                var hist = dataDict.GetValueOrDefault("سابقه نمایندگی", "");
+                if (hist != "")
+                {
+                    var histsAll = hist.Replace("دوره", "").s_().Split(" ").Select(x =>
+                         utils.persianNum2int(x.s_())
+                   ).ToList();
+                    member.History.AddRange(histsAll);
+                }
+
                 var vote_details = new int[] { 0, 0 };
                 var vote_details_l = dataDict
                     .GetValueOrDefault("آراء ماخوذ", "")
                     .Replace(".", "")
                     .Split("از");
-                    if (vote_details_l.Length == 2)
-                    vote_details=vote_details_l.Select(x => x.toInt32()).ToArray();
+                if (vote_details_l.Length == 2)
+                    vote_details = vote_details_l.Select(x => x.toInt32()).ToArray();
                 member.VotesRecived = vote_details[0];
                 member.VotesTotal = vote_details[1];
                 member.jcertified = dataDict.GetValueOrDefault("تاریخ تصویب اعتبار نامه", "");
@@ -234,21 +239,155 @@ namespace Html2Sql.Controllers
                 }
                 member.Memberships = memberShipList;
                 member.Id = ObjectId.GenerateNewId();
-                 _context.InsertOne(member);
-                //using (var sw = new StreamWriter(@"C:\Users\muhammadS\Desktop\tmp.txt"))
-                //{
-                //    var _ = JsonConvert.SerializeObject(member, Formatting.Indented);
-                //    sw.Write(_);
-                //    //Console.Clear();
-                //    //Console.WriteLine(_);
-                //}
-
+                _context.InsertOne(member);
             }
+            keys = keys.Distinct().ToList();
+            var _3 = JsonConvert.SerializeObject(keys);
+            keysw.Write(_3);
+            keysw.Close();
+            return;
         }
 
+        [HttpGet("NewsAndSpeeches2Html")]
+        public async Task<int> GetNews()
+        {
+            var json = new StreamReader(@"C:\Users\muhammadS\Desktop\majles\all_members\parsed.json");
+
+            var t = JsonConvert.DeserializeObject<List<RawMember>>(json.ReadToEnd());
+            json.Close();
+
+            foreach (var raw in t.Yaap(total: t.Count))
+            {
+
+                var hdoc = new HtmlDocument();
+                var html = new StreamReader
+                    ($"C:\\Users\\muhammadS\\Desktop\\majles\\all_members\\pages\\{raw.index}.html");
+                hdoc.Load(html);
+                html.Close();
+
+                var news = hdoc.QuerySelectorAll(".news-collection__header");
+                if (news != null)
+                {
+                    var d = news.QuerySelectorAll(".news-collection__header").Select(x =>
+                    new
+                    {
+                        name = x.QuerySelector(".news-collection__main-title").InnerText.s_(),
+                        url = base_url + x.QuerySelector("a").GetAttributeValue("href", "")
+                    }).ToDictionary(x => x.name, x => x.url);
+
+                    var speeches_url = d.GetValueOrDefault("نطق‌ها و مصاحبه‌ها", "");
+                    var news_url = d.GetValueOrDefault("اخبار", "");
+                    var s = $"written : {raw.index}";
+                    if (speeches_url != "")
+                    {
+                        using (var sw = new StreamWriter($"C:\\Users\\muhammadS\\Desktop\\majles\\all_members\\speeches\\{raw.index}.html"))
+                        {
+                            try
+                            {
+                                var result = await utils.GetUrlHtml(speeches_url);
+                                await sw.WriteAsync(result);
+                                s = "speeches & " + s;
+                            }
+                            catch
+                            {
+                                Console.BackgroundColor = ConsoleColor.Red;
+                                Console.WriteLine($"{raw.index}: speeches");
+                                Console.BackgroundColor = ConsoleColor.Black;
+
+                            }
+                        }
+                        if (news_url != "")
+                        {
+                            using (var sw = new StreamWriter($"C:\\Users\\muhammadS\\Desktop\\majles\\all_members\\news\\{raw.index}.html"))
+                            {
+                                try
+                                {
+                                    var result = await utils.GetUrlHtml(news_url);
+                                    await sw.WriteAsync(result);
+                                    s = "news & " + s;
+                                }
+                                catch
+                                {
+                                    Console.BackgroundColor = ConsoleColor.Red;
+                                    Console.WriteLine($"{raw.index}: news");
+                                    Console.BackgroundColor = ConsoleColor.Black;
+
+                                }
+                            }
+                        }
+                        YaapConsole.WriteLine(s);
+                    }
+                }
 
 
+            }
+            return 0;
+        }
+        [HttpPut("AddNewsAndSpeeches2sql")]
+        public async Task<int> AddNewsSpeeches()
+        {
+            Console.Clear();
+            //news
+            var ls = Directory.GetFiles($"C:\\Users\\muhammadS\\Desktop\\majles\\all_members\\news");
+            foreach (var i in ls.Yaap(settings: new YaapSettings
+            {
+                Description = "news",
+                Width = 100,
+                ColorScheme = YaapColorScheme.Bright,
+                SmoothingFactor = 0.5,
+            }))
+            {
+                var hdoc = new HtmlDocument();
+                var html = new StreamReader(i);
+                hdoc.Load(html);
+                html.Close();
+                var mem_id = Path.GetFileName(i).Split(".")[0].toInt32();
+                var news = hdoc.QuerySelectorAll(".news-item__content").Select(x => new
+                News_Speeches
+                {
+                    jDate = x.QuerySelector("li.text__12.text__gray").InnerText.s_(),
+                    Title = x.QuerySelector("a.news-item__title").InnerText.s_(),
+                    Url = base_url + x.QuerySelector("a.news-item__title").GetAttributeValue("href", ""),
+                    Desc = x.QuerySelector(".news-item__lead").InnerText.s_(),
+                }).ToList();
+                YaapConsole.WriteLine($"{mem_id} : {news.Count}");
+                var update = Builders<MemeberDetails>
+                .Update
+                .Set(rec => rec.News, news);
+                 _context.FindOneAndUpdate(x => x.MemId == mem_id, update);
+            }
 
 
+            //Speeches  
+            ls = Directory.GetFiles($"C:\\Users\\muhammadS\\Desktop\\majles\\all_members\\speeches");
+            foreach (var i in ls.Yaap(settings: new YaapSettings
+            {
+                Description = "speeches",
+                Width = 100,
+                ColorScheme = YaapColorScheme.Bright,
+                SmoothingFactor = 0.5,
+            }))
+            {
+                var hdoc = new HtmlDocument();
+                var html = new StreamReader(i);
+                hdoc.Load(html);
+                html.Close();
+                var mem_id = Path.GetFileName(i).Split(".")[0].toInt32();
+                var speeches = hdoc.QuerySelectorAll(".news-item__content").Select(x => new
+                News_Speeches
+                {
+                    jDate = x.QuerySelector("li.text__12.text__gray").InnerText.s_(),
+                    Title = x.QuerySelector("a.news-item__title").InnerText.s_(),
+                    Url = base_url + x.QuerySelector("a.news-item__title").GetAttributeValue("href", ""),
+                    Desc = ""
+                }).ToList();
+                YaapConsole.WriteLine($"{mem_id} : {speeches.Count}");
+                var update = Builders<MemeberDetails>
+                .Update
+                .Set(rec => rec.Speeches, speeches);
+                 _context.FindOneAndUpdate(x => x.MemId == mem_id, update);
+            }
+            return 0;
+        }
     }
 }
