@@ -10,7 +10,8 @@ SELECT
 	ImageUrl,
 	Region,
 	at.type_value Activity,
-	v.jdate 
+	v.jdate ,
+	m.FirstVote,
 FROM
 	Votes v
 	LEFT JOIN VotingSessions vs ON v.VotingSessionId = vs.Id

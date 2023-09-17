@@ -478,7 +478,7 @@ namespace Html2Sql.Controllers
                     .ToList();
                 YaapConsole.WriteLine($"{mem_id} : {speeches.Count}");
                 var update = Builders<MemeberDetails>.Update.Set(rec => rec.Speeches, speeches);
-                _context.FindOneAndUpdate(x => x.MemId == mem_id, update);
+                await _context.FindOneAndUpdateAsync(x => x.MemId == mem_id, update);
             }
             return 0;
         }

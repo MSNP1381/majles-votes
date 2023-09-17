@@ -187,13 +187,14 @@ namespace Html2Sql.Controllers
         [HttpPost(Name = "AddFirstVoteDate")]
         public ActionResult Post()
         {
-            var t = _context.Votes
+            var members_dct = _context.Members.ToDictionary(x => x.Id, x => x);
+                var t = _context.Votes.ToList()
                 .GroupBy(x => x.MemberId)
                 .Select(x => x.MinBy(y => y.Date))
-                .ToList();
+                ;
             var mem_date = t.Select(x =>
             {
-                var tmp = x.Member;
+                var tmp = members_dct[ x.MemberId];
                 tmp.jFirstVote = x.jdate;
                 return tmp;
             });
