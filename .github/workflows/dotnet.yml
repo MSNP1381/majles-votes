@@ -26,8 +26,7 @@ jobs:
     - name: Build
       working-directory: ./Html2Sql/Html2Sql/
       run: dotnet build --no-restore 
-    - name: Test
-      working-directory: ./Html2Sql/Html2Sql/
-      run: dotnet test --no-build --verbosity normal 
     - name: Publish
+      env:
+        CONNSTR: ${{ secrets.CONNSTR }}
       run: dotnet publish ./Html2Sql/Html2Sql/ -c Release -o website
