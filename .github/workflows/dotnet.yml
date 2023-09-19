@@ -22,7 +22,7 @@ jobs:
         dotnet-version: 6.0.x
     - name: Restore dependencies 
       working-directory: ./Html2Sql/Html2Sql/
-      run: dotnet restore --project 
+      run: dotnet restore 
     - name: Build
       working-directory: ./Html2Sql/Html2Sql/
       run: dotnet build --no-restore 
