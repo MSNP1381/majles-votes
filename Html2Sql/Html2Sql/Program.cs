@@ -22,7 +22,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 
-builder.Services.AddDbContext<DataContext>();
 
 var app = builder.Build();
 
@@ -32,6 +31,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+var conStr = app.Environment.IsDevelopment() ? builder.Configuration.GetConnectionString("Default") : Environment.GetEnvironmentVariable("CONNSTR");
+builder.Services.AddDbContext<DataContext>(options => options.UseNpgsql(conStr));
 
 app.UseHttpsRedirection();
 

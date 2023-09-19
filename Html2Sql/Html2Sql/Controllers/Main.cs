@@ -21,13 +21,11 @@ namespace Html2Sql.Controllers
             _logger = logger;
             _context = context;
 
-            var l = utils.AttendanceTypeValues.Select(x => new AttendanceTypeTbl
-            {
-                Id = x.Key,
-                type_value = x.Value
-            }).ToList();
-            var all_att = context.Database.ExecuteSql($"DELETE FROM {nameof(_context.AttendeceTypes)}");
-            
+            var l = utils.AttendanceTypeValues
+                .Select(x => new AttendanceTypeTbl { Id = x.Key, type_value = x.Value })
+                .ToList();
+            _context.AttendeceTypes.RemoveRange(_context.AttendeceTypes);
+
             context.AddRange(l);
             context.SaveChanges();
         }

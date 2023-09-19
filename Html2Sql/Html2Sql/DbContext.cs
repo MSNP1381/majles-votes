@@ -14,12 +14,7 @@ namespace Html2Sql
             DbPath = System.IO.Path.Join(path, "data.db");
         }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder options)
-        {
-            options.UseSqlite($"Data Source={DbPath}")
-                //.UseLazyLoadingProxies()
-                ;
-        }
+
 
         public DbSet<Member> Members { get; set; }
         public DbSet<Vote> Votes { get; set; }
