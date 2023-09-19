@@ -16,14 +16,14 @@ namespace Html2Sql
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
-            options.UseSqlite($"Data Source={DbPath}");
-
-
+            options.UseSqlite($"Data Source={DbPath}")
+                //.UseLazyLoadingProxies()
+                ;
         }
+
         public DbSet<Member> Members { get; set; }
         public DbSet<Vote> Votes { get; set; }
         public DbSet<VotingSession> VotingSessions { get; set; }
         public DbSet<AttendanceTypeTbl> AttendeceTypes { get; set; }
- 
     }
 }

@@ -32,18 +32,9 @@ namespace Html2Sql.Controllers
             public List<int> BoardYear = new();
         }
 
-        private int year2int(string year)
-        {
-            if (year.Contains("اول"))
-                return 1;
-            if (year.Contains("دوم"))
-                return 2;
-            if (year.Contains("سوم"))
-                return 3;
-            return 4;
-        }
 
-        private Education educationText2obj(string s)
+
+        private Education EducationText2obj(string s)
         {
             s = s.Trim();
             bool is_grad = true;
@@ -131,7 +122,7 @@ namespace Html2Sql.Controllers
                         {
                             id = x.GetAttributeValue("href", "").Replace("#", ""),
                             text = x.InnerText.s_(),
-                            yearNo = year2int(x.InnerText.s_())
+                            yearNo = utils.Year2int(x.InnerText.s_())
                         }
                 );
             foreach (var year in yearIds)
@@ -242,7 +233,7 @@ namespace Html2Sql.Controllers
                 member.Educations = dataDict
                     .GetValueOrDefault("تحصیلات دانشگاهی", "")
                     .Split('،')
-                    .Select(x => educationText2obj(x))
+                    .Select(x => EducationText2obj(x))
                     .ToList();
                 member.jcertified = dataDict.GetValueOrDefault("تاریخ انتخاب", "");
                 member.ChooseState = dataDict.GetValueOrDefault("مرحله انتخاب", "");

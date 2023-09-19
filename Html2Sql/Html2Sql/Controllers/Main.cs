@@ -1,6 +1,7 @@
 ﻿using Html2Sql.tools;
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
 using Yaap;
@@ -20,41 +21,18 @@ namespace Html2Sql.Controllers
             _logger = logger;
             _context = context;
 
-            var l = new List<AttendanceTypeTbl>
+            var l = utils.AttendanceTypeValues.Select(x => new AttendanceTypeTbl
             {
-                new AttendanceTypeTbl
-                {
-                    type_key = (int)AttendanceType.absence,
-                    type_value = "غیبت"
-                },
-                new AttendanceTypeTbl
-                {
-                    type_key = (int)AttendanceType.nonParticipation,
-                    type_value = "عدم مشارکت"
-                },
-                new AttendanceTypeTbl
-                {
-                    type_key = (int)AttendanceType.against,
-                    type_value = "مخالف"
-                },
-                new AttendanceTypeTbl
-                {
-                    type_key = (int)AttendanceType.favor,
-                    type_value = "موافق"
-                },
-                new AttendanceTypeTbl
-                {
-                    type_key = (int)AttendanceType.abstaining,
-                    type_value = "ممتنع"
-                },
-            };
-            var all_att = context.AttendeceTypes.ToList();
-            var nl = l.Where(x => !all_att.Any(t => t.type_key == x.type_key));
-            context.AddRange(nl);
+                Id = x.Key,
+                type_value = x.Value
+            }).ToList();
+            var all_att = context.Database.ExecuteSql($"DELETE FROM {nameof(_context.AttendeceTypes)}");
+            
+            context.AddRange(l);
             context.SaveChanges();
         }
 
-        private AttendanceType stat2enum(string stat)
+        private AttendanceType Stat2enum(string stat)
         {
             stat = stat.Replace(" ", "").Replace("\n", "");
             switch (stat)
@@ -146,8 +124,8 @@ namespace Html2Sql.Controllers
                     var family_city = tmp[2].InnerText.s_().Split('(', ')');
                     var family = family_city[0];
                     var city = family_city[1];
-                    var stat = stat2enum(tmp[4].InnerText.s_());
-                    st.WriteLine($"{tmp[4].InnerText.s_()} => {stat2enum(tmp[4].InnerText.s_())}");
+                    var stat = Stat2enum(tmp[4].InnerText.s_());
+                    st.WriteLine($"{tmp[4].InnerText.s_()} => {Stat2enum(tmp[4].InnerText.s_())}");
                     var member = _context.Members.FirstOrDefault(
                         x =>
                             (x.Name == name && x.Family == family && city == x.Region)
@@ -188,13 +166,13 @@ namespace Html2Sql.Controllers
         public ActionResult Post()
         {
             var members_dct = _context.Members.ToDictionary(x => x.Id, x => x);
-                var t = _context.Votes.ToList()
+            var t = _context.Votes
+                .ToList()
                 .GroupBy(x => x.MemberId)
-                .Select(x => x.MinBy(y => y.Date))
-                ;
+                .Select(x => x.MinBy(y => y.Date));
             var mem_date = t.Select(x =>
             {
-                var tmp = members_dct[ x.MemberId];
+                var tmp = members_dct[x.MemberId];
                 tmp.jFirstVote = x.jdate;
                 return tmp;
             });

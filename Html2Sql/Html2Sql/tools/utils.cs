@@ -48,6 +48,26 @@ namespace Html2Sql.tools
 
     public static class utils
     {
+        public static Dictionary<int, string> AttendanceTypeValues = new Dictionary<int, string>()
+        {
+            { (int)AttendanceType.absence, "غیبت" },
+            { (int)AttendanceType.nonParticipation, "عدم مشارکت" },
+            { (int)AttendanceType.against, "مخالف" },
+            { (int)AttendanceType.favor, "موافق" },
+            { (int)AttendanceType.abstaining, "ممتنع" },
+        };
+
+        public static int Year2int(string year)
+        {
+            if (year.Contains("اول"))
+                return 1;
+            if (year.Contains("دوم"))
+                return 2;
+            if (year.Contains("سوم"))
+                return 3;
+            return 4;
+        }
+
         static Dictionary<string, int> farsiNumbers = new Dictionary<string, int>()
         {
             { "اول", 1 },

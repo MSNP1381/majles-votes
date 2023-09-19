@@ -1,6 +1,8 @@
-﻿using MongoDB.Bson;
+﻿using Html2Sql;
+using MongoDB.Bson;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
+using System.Text.Json.Serialization;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Html2Sql
@@ -39,7 +41,7 @@ namespace Html2Sql
         public string Region { get; set; }
         public string ImageUrl { get; set; }
         public string? Image { get; set; }
-        public string ?jFirstVote { get; set; }
+        public string? jFirstVote { get; set; }
         public DateTime FirstVote
         {
             get
@@ -47,16 +49,21 @@ namespace Html2Sql
                 try
                 {
                     CultureInfo persianCulture = new CultureInfo("fa-IR");
-                    DateTime persianDateTime = DateTime.ParseExact(jFirstVote, "yyyy/MM/dd", persianCulture);
+                    DateTime persianDateTime = DateTime.ParseExact(
+                        jFirstVote,
+                        "yyyy/MM/dd",
+                        persianCulture
+                    );
                     return persianDateTime;
                 }
                 catch
                 {
-                    return new DateTime(1970,1,1,0,0,0);
+                    return new DateTime(1970, 1, 1, 0, 0, 0);
                 }
             }
             set { }
         }
+
         public virtual List<Vote> Votes { get; set; }
     }
 
@@ -68,7 +75,10 @@ namespace Html2Sql
 
         [ForeignKey("MemberId")]
         public virtual Member Member { get; set; }
-        public AttendanceType activity { get; set; }
+        [JsonIgnore]
+        public  AttendanceType activity { get; set; }
+        [NotMapped]
+        public  string ActivityName { get; set; }
         public string jdate { get; set; }
         public DateTime Date
         {
@@ -83,7 +93,7 @@ namespace Html2Sql
         public int VotingSessionId { get; set; }
 
         [ForeignKey("VotingSessionId")]
-        public VotingSession VotingSession { get; set; }
+        public virtual VotingSession VotingSession { get; set; }
     }
 
     public class VotingSession
@@ -111,9 +121,9 @@ namespace Html2Sql
     public class AttendanceTypeTbl
     {
         public int Id { get; set; }
-        public int type_key { get; set; }
         public string? type_value { get; set; }
     }
+
     [NotMapped]
     public class MemeberDetails
     {
@@ -181,15 +191,6 @@ namespace Html2Sql
         }
     }
 
-    //public class MemeberDetailsCommission
-    //{
-    //    public int CommissionId { get; set; }
-    //    public int MemeberDetailsId { get; set; }
-    //    public MemeberDetails MemeberDetails { get; set; } = null!;
-    //    public Commission Commission { get; set; } = null!;
-    //    public int Year { get; set; }
-    //    public bool isInCharge { get; set; }
-    //}
     public enum MembershipType
     {
         Commission = 0,
@@ -197,6 +198,7 @@ namespace Html2Sql
 
         Friendship = 2,
     }
+
     public class Membership
     {
         public int Id { get; set; }
@@ -210,11 +212,13 @@ namespace Html2Sql
         //[ForeignKey("MemeberId")]
         //public MemeberDetails Memeber { get; set; }
     }
+
     public class EnumVal
     {
         public string Name { get; set; }
         public Dictionary<int, string> Value { get; set; }
     }
+
     [NotMapped]
     public class BoardMember
     {
@@ -256,4 +260,6 @@ namespace Html2Sql
             set { }
         }
     }
+
+
 }
