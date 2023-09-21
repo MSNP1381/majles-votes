@@ -48,6 +48,7 @@ namespace Html2Sql.tools
 
     public static class utils
     {
+
         public static Dictionary<int, string> AttendanceTypeValues = new Dictionary<int, string>()
         {
             { (int)AttendanceType.absence, "غیبت" },
@@ -117,4 +118,12 @@ namespace Html2Sql.tools
             return await response.Content.ReadAsStringAsync();
         }
     }
+
+    public static class UserRoles
+    {
+        public const string Admin = "Admin";
+        public const string User = "User";
+    }
+
+
 }

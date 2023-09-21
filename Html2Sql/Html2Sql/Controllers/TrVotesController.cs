@@ -3,6 +3,7 @@ using Html2Sql;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Html2Sql.tools;
+using Microsoft.AspNetCore.Authorization;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -10,6 +11,8 @@ namespace trvotes.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+
+    [Authorize]
     public class TrVotesController : ControllerBase
     {
         private ILogger<Main> _logger;
@@ -22,6 +25,7 @@ namespace trvotes.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<IEnumerable<VotingSession>> GetAllSessions(DateTime? from, DateTime? to)
         {
             from = from ?? new DateTime(0);

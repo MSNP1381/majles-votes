@@ -1,5 +1,6 @@
 ﻿using Html2Sql.tools;
 using HtmlAgilityPack;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -10,6 +11,7 @@ namespace Html2Sql.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize(Roles =UserRoles.Admin)]
     public class Main : ControllerBase
     {
         private string base_url = "https://trvotes.parliran.ir";

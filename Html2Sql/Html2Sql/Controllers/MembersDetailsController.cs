@@ -1,5 +1,6 @@
 ﻿using Html2Sql.tools;
 using HtmlAgilityPack;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -10,6 +11,8 @@ namespace Html2Sql.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = UserRoles.Admin)]
+
     public class MembersDetailsController : ControllerBase
     {
         private const string base_url = "https://www.parliran.ir";

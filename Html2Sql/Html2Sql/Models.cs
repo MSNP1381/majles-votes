@@ -1,5 +1,7 @@
 ﻿using Html2Sql;
+using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
 using System.Text.Json.Serialization;
@@ -65,6 +67,11 @@ namespace Html2Sql
         }
 
         public virtual List<Vote> Votes { get; set; }
+    }
+    public class Token
+    {
+        public string Value { get; set; }
+        public DateTime ExpiryDate { get; set; }
     }
 
     public class Vote
@@ -261,5 +268,10 @@ namespace Html2Sql
         }
     }
 
+
+    public class RegisterModel: IdentityUser
+    {
+
+    }
 
 }

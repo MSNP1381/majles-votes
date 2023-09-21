@@ -9,3 +9,4 @@ all_members/pages/*
 /all_members/speeches
 /all_members/news
 /votes.csv
+/Html2Sql/Html2Sql/appsettings.json
