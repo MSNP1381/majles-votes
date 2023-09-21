@@ -26,6 +26,8 @@ jobs:
     - name: Build
       working-directory: ./Html2Sql/Html2Sql/
       run: dotnet build --no-restore 
+    - name : Tree
+      run : tree -d .
     - name: Publish
       env:
         CONNSTR: ${{ secrets.CONNSTR }}
