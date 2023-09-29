@@ -16,10 +16,7 @@ var conStr =
         : Environment.GetEnvironmentVariable("CONNSTR");
 builder.Services.AddDbContext<DataContext>(options => options.UseNpgsql(conStr));
 
-
-
-
-
+builder.Services.AddCors();
 
 builder.Services
     .AddIdentityCore<RegisterModel>(options =>
@@ -69,32 +66,37 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(x =>
 {
     x.SwaggerDoc("v1", new OpenApiInfo { Title = "You api title", Version = "v1" });
-    x.AddSecurityDefinition(name: "Bearer", securityScheme: new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Description = "Enter the Bearer Authorization string as following: `Bearer Generated-JWT-Token`",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-    x.AddSecurityRequirement(new OpenApiSecurityRequirement
-{
-    {
-        new OpenApiSecurityScheme
+    x.AddSecurityDefinition(
+        name: "Bearer",
+        securityScheme: new OpenApiSecurityScheme
         {
-            Name = "Bearer",
+            Name = "Authorization",
+            Description =
+                "Enter the Bearer Authorization string as following: `Bearer Generated-JWT-Token`",
             In = ParameterLocation.Header,
-            Reference = new OpenApiReference
+            Type = SecuritySchemeType.ApiKey,
+            Scheme = "Bearer"
+        }
+    );
+    x.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
+        {
             {
-                Id = "Bearer",
-                Type = ReferenceType.SecurityScheme
+                new OpenApiSecurityScheme
+                {
+                    Name = "Bearer",
+                    In = ParameterLocation.Header,
+                    Reference = new OpenApiReference
+                    {
+                        Id = "Bearer",
+                        Type = ReferenceType.SecurityScheme
+                    }
+                },
+                new List<string>()
             }
-        },
-        new List<string>()
-    }
+        }
+    );
 });
-});
-
 
 var app = builder.Build();
 
@@ -113,4 +115,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.UseCors(builder1 =>
+{
+    builder1.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+});
 app.Run();

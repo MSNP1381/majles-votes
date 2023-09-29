@@ -1,4 +1,5 @@
 ﻿using Html2Sql;
+using Html2Sql;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
 using System.ComponentModel.DataAnnotations;
@@ -68,6 +69,7 @@ namespace Html2Sql
 
         public virtual List<Vote> Votes { get; set; }
     }
+
     public class Token
     {
         public string Value { get; set; }
@@ -82,10 +84,12 @@ namespace Html2Sql
 
         [ForeignKey("MemberId")]
         public virtual Member Member { get; set; }
+
         [JsonIgnore]
-        public  AttendanceType activity { get; set; }
+        public AttendanceType activity { get; set; }
+
         [NotMapped]
-        public  string ActivityName { get; set; }
+        public string ActivityName { get; set; }
         public string jdate { get; set; }
         public DateTime Date
         {
@@ -268,10 +272,5 @@ namespace Html2Sql
         }
     }
 
-
-    public class RegisterModel: IdentityUser
-    {
-
-    }
-
+    public class RegisterModel : IdentityUser { }
 }

@@ -11,7 +11,7 @@ namespace Html2Sql.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    [Authorize(Roles =UserRoles.Admin)]
+    [Authorize(Roles = UserRoles.Admin)]
     public class Main : ControllerBase
     {
         private string base_url = "https://trvotes.parliran.ir";

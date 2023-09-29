@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Html2Sql.tools;
 using Microsoft.AspNetCore.Authorization;
+using System.Globalization;
+using trvotes.Interfaces;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -11,17 +13,18 @@ namespace trvotes.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-
-    [Authorize]
+    [AllowAnonymous]
     public class TrVotesController : ControllerBase
     {
-        private ILogger<Main> _logger;
+        private ILogger<TrVotesController> _logger;
         private DataContext _context;
-        
-        public TrVotesController(ILogger<Main> logger, DataContext context)
+        private readonly IWebHostEnvironment _environment;
+
+        public TrVotesController(ILogger<TrVotesController> logger, DataContext context, IWebHostEnvironment environment)
         {
             _logger = logger;
             _context = context;
+            _environment = environment;
         }
 
         [HttpGet]
@@ -44,7 +47,17 @@ namespace trvotes.Controllers
         [HttpGet("GetMember")]
         public async Task<ActionResult<Member>> GetMember(int memId)
         {
-            var data = await _context.Members.FirstOrDefaultAsync(x => x.MemId == memId);
+            var data = await _context.Members
+                .Include(x => x.Votes)
+                .ThenInclude(x => x.VotingSession)
+                .FirstOrDefaultAsync(x => x.MemId == memId);
+            data.Votes
+                .Where(x =>
+                {
+                    x.ActivityName = utils.AttendanceTypeValues[(int)x.activity];
+                    return true;
+                })
+                .ToList();
             if (data == null)
                 return NotFound();
             return Ok(data);
@@ -69,18 +82,41 @@ namespace trvotes.Controllers
         [HttpGet("GetSession")]
         public async Task<ActionResult<VotingSession>> GetSession(int sessionId)
         {
-            var data = await _context.Votes
-                .Include(x => x.Member)
-                .Where(x => x.VotingSessionId == sessionId)
+            var data = await _context.VotingSessions
+                .Include(x => x.Votes)
+                .ThenInclude(x => x.Member)
+                .FirstOrDefaultAsync(x => x.Id == sessionId);
+            if (data == null)
+                return NotFound();
+            data.Votes
+                .Where(x =>
+                {
+                    x.ActivityName = utils.AttendanceTypeValues[(int)x.activity];
+                    return true;
+                })
+                .ToList();
+            return Ok(data);
+        }
+        
+        [HttpGet("GetFirstVotesCount")]
+        public async Task<ActionResult> GetFirstVotesCount()
+        {
+            
+            var data = await _context.Members
+                .GroupBy(x => x.jFirstVote)
+                .Select(x => new { date = x.Key ?? "", count = x.Count() })
+                .OrderBy(x => x.date)
                 .ToListAsync();
             if (data == null)
                 return NotFound();
-            data= data.Where(x =>
-            {
-                x.ActivityName = utils.AttendanceTypeValues[(int)x.activity];
-                return true;
-            }).ToList();
             return Ok(data);
+        }
+        [HttpGet("GetMemberImage/{id}")]
+        public async Task<FileResult> GetMemberImage([FromRoute]int id)
+        {
+            string path = Path.Combine(_environment.WebRootPath, "images", $"{id}.jpg");
+            var imageFileStream =await System.IO.File.ReadAllBytesAsync(path);
+            return File(imageFileStream, "image/jpg");
         }
     }
 }

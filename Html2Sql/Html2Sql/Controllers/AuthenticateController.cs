@@ -10,11 +10,13 @@ using System.ComponentModel.DataAnnotations;
 using Html2Sql;
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.AspNetCore.Authorization;
 
 namespace trvotes.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = UserRoles.Admin)]
     public class AuthenticateController : ControllerBase
     {
         private readonly IHostEnvironment hostEnvironment;
@@ -40,7 +42,7 @@ namespace trvotes.Controllers
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
             var user = await _userManager.FindByNameAsync(model.Username);
-            var password =await _userManager.CheckPasswordAsync(user, model.Password);
+            var password = await _userManager.CheckPasswordAsync(user, model.Password);
 
             if (user != null && password)
             {

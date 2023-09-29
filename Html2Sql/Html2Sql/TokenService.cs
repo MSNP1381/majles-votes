@@ -13,9 +13,9 @@ namespace trvotes
     {
         private const int EXPIRATION_MINUTES = 60 * 24 * 7;
 
-        private readonly string issuer ;
-        private readonly string audience ;
-        private readonly string key ;
+        private readonly string issuer;
+        private readonly string audience;
+        private readonly string key;
 
         public JwtService(IConfiguration configuration)
         {

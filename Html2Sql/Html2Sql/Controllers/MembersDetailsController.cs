@@ -12,7 +12,6 @@ namespace Html2Sql.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = UserRoles.Admin)]
-
     public class MembersDetailsController : ControllerBase
     {
         private const string base_url = "https://www.parliran.ir";
@@ -34,8 +33,6 @@ namespace Html2Sql.Controllers
             public List<BoardType> BoardType = new();
             public List<int> BoardYear = new();
         }
-
-
 
         private Education EducationText2obj(string s)
         {
