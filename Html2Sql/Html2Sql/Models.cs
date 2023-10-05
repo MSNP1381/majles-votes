@@ -37,7 +37,8 @@ namespace Html2Sql
 
     public class Member
     {
-        public int Id { get; set; }
+        [Key]
+        public int Id { get; set; } = 0;
         public int MemId { get; set; }
         public string Name { get; set; }
         public string Family { get; set; }
@@ -52,16 +53,14 @@ namespace Html2Sql
                 try
                 {
                     CultureInfo persianCulture = new CultureInfo("fa-IR");
-                    DateTime persianDateTime = DateTime.ParseExact(
-                        jFirstVote,
-                        "yyyy/MM/dd",
-                        persianCulture
-                    );
+                    DateTime persianDateTime = DateTime
+                        .ParseExact(jFirstVote, "yyyy/MM/dd", persianCulture)
+                        .ToUniversalTime();
                     return persianDateTime;
                 }
                 catch
                 {
-                    return new DateTime(1970, 1, 1, 0, 0, 0);
+                    return new DateTime(1970, 1, 1, 0, 0, 0).ToUniversalTime();
                 }
             }
             set { }
@@ -78,6 +77,7 @@ namespace Html2Sql
 
     public class Vote
     {
+        [Key]
         public int Id { get; set; }
 
         public int MemberId { get; set; }
@@ -96,7 +96,9 @@ namespace Html2Sql
             get
             {
                 CultureInfo persianCulture = new CultureInfo("fa-IR");
-                DateTime persianDateTime = DateTime.ParseExact(jdate, "yyyy/MM/dd", persianCulture);
+                DateTime persianDateTime = DateTime
+                    .ParseExact(jdate, "yyyy/MM/dd", persianCulture)
+                    .ToUniversalTime();
                 return persianDateTime;
             }
             set { }
@@ -115,14 +117,16 @@ namespace Html2Sql
         public int Favor { get; set; }
         public int Abstaining { get; set; }
         public string jdate { get; set; }
-
+        public int group_id { get; set; }
         public virtual List<Vote> Votes { get; set; }
         public DateTime Date
         {
             get
             {
                 CultureInfo persianCulture = new CultureInfo("fa-IR");
-                DateTime persianDateTime = DateTime.ParseExact(jdate, "yyyy/MM/dd", persianCulture);
+                DateTime persianDateTime = DateTime
+                    .ParseExact(jdate, "yyyy/MM/dd", persianCulture)
+                    .ToUniversalTime();
                 return persianDateTime;
             }
             set { }

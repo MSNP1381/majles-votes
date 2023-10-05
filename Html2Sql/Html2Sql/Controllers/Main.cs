@@ -2,34 +2,45 @@
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.DotNet.Scaffolding.Shared.CodeModifier.CodeChange;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
-
+using NuGet.DependencyResolver;
+using RestSharp;
+using System;
+using System.Globalization;
+using System.Text;
+using System.Xml.Linq;
 using Yaap;
+using Formatting = Newtonsoft.Json.Formatting;
+using Method = RestSharp.Method;
 
 namespace Html2Sql.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    [Authorize(Roles = UserRoles.Admin)]
+
     public class Main : ControllerBase
     {
         private string base_url = "https://trvotes.parliran.ir";
         private readonly ILogger<Main> _logger;
         private readonly DataContext _context;
+        private readonly IWebHostEnvironment _environment;
+        string desktopPath;
 
-        public Main(ILogger<Main> logger, DataContext context)
+        public Main(ILogger<Main> logger, DataContext context, IWebHostEnvironment? environment)
         {
             _logger = logger;
             _context = context;
+            _environment = environment;
+            desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
 
-            var l = utils.AttendanceTypeValues
-                .Select(x => new AttendanceTypeTbl { Id = x.Key, type_value = x.Value })
-                .ToList();
-            _context.AttendeceTypes.RemoveRange(_context.AttendeceTypes);
+            //var l = utils.AttendanceTypeValues
+            //    .Select(x => new AttendanceTypeTbl { Id = x.Key, type_value = x.Value })
+            //    .ToList();
+            //_context.AttendeceTypes.RemoveRange(_context.AttendeceTypes);
 
-            context.AddRange(l);
-            context.SaveChanges();
+            //context.AddRange(l);
+            //context.SaveChanges();
         }
 
         private AttendanceType Stat2enum(string stat)
@@ -63,14 +74,30 @@ namespace Html2Sql.Controllers
             );
         }
 
-        [HttpGet(Name = "get")]
+        [HttpPut(Name = "")]
+        public async Task<ActionResult> PutGropuify()
+        {
+            var l = await _context.VotingSessions.ToListAsync();
+            var index = 0;
+            var dis = l.Select(x => x.jdate).Distinct().ToDictionary(x => x, x => index++);
+            for (var i = 0; i < l.Count; i++)
+            {
+                l[i].group_id = dis[l[i].jdate];
+            }
+            _context.VotingSessions.UpdateRange(l);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpGet("get")]
         public async Task<ActionResult> Get()
         {
-            var st = new StreamWriter(@"C:\Users\muhammadS\Desktop\x.txt");
-            StreamReader r = new StreamReader(@"C:\Users\muhammadS\Desktop\majles\parsed.json");
+            StreamReader r = new StreamReader(
+                Path.Combine(_environment.WebRootPath, "Resources", "votes", "parsed.json")
+            );
             string json = r.ReadToEnd();
             r.Close();
-            List<Item>? items = JsonConvert.DeserializeObject<List<Item>>(json);
+            List<Item>? items = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Item>>(json);
             var len_item = items.Count();
             var f_it = DateTime.Now;
             foreach (var i in items.Yaap())
@@ -81,7 +108,13 @@ namespace Html2Sql.Controllers
                 var jdate = i.time;
                 var hdoc = new HtmlDocument();
                 var html = new StreamReader(
-                    @"C:\Users\muhammadS\Desktop\majles\pages\" + id + ".html"
+                    Path.Combine(
+                        _environment.WebRootPath,
+                        "Resources",
+                        "votes",
+                        "pages",
+                        "parsed.json"
+                    )
                 );
                 hdoc.Load(html);
                 var vote_title = hdoc.QuerySelector(
@@ -125,7 +158,7 @@ namespace Html2Sql.Controllers
                     var family = family_city[0];
                     var city = family_city[1];
                     var stat = Stat2enum(tmp[4].InnerText.s_());
-                    st.WriteLine($"{tmp[4].InnerText.s_()} => {Stat2enum(tmp[4].InnerText.s_())}");
+
                     var member = _context.Members.FirstOrDefault(
                         x =>
                             (x.Name == name && x.Family == family && city == x.Region)
@@ -162,7 +195,7 @@ namespace Html2Sql.Controllers
             return Ok();
         }
 
-        [HttpPost(Name = "AddFirstVoteDate")]
+        [HttpPost("AddFirstVoteDate")]
         public ActionResult Post()
         {
             var members_dct = _context.Members.ToDictionary(x => x.Id, x => x);
@@ -186,6 +219,112 @@ namespace Html2Sql.Controllers
             public string title { get; set; }
             public string time { get; set; }
             public string url { get; set; }
+        }
+
+        [HttpGet("GetIndex")]
+        public async Task<ActionResult> get_index()
+        {
+
+            var options = new RestClientOptions("https://trvotes.parliran.ir")
+            {
+                MaxTimeout = -1,
+                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0",
+            };
+            var client = new RestClient(options);
+            var request = new RestRequest("/", Method.Post);
+            request.AddHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+            request.AddHeader("Accept-Language", "en-US,en;q=0.5");
+            request.AddHeader("Accept-Encoding", "gzip, deflate, br");
+            request.AddHeader("Referer", "https://trvotes.parliran.ir/");
+            request.AddHeader("Origin", "https://trvotes.parliran.ir");
+            request.AddHeader("DNT", "1");
+            request.AddHeader("Connection", "keep-alive");
+            request.AddHeader("Cookie", "__RequestVerificationToken=O0U-oVgKAhXKPUHpWrcuVWzl9V-SrSI_aOTPnhM9bRR4CdLUm87gFdG4syEMQ_vi2Txo_jAsIzr4dcbvMU5ipC_zLx8uzCO-gfylKp4A1aE1; AHAS=dxo3trt0fzfr2342se2rrtuz");
+            request.AddHeader("Upgrade-Insecure-Requests", "1");
+            request.AddHeader("Sec-Fetch-Dest", "document");
+            request.AddHeader("Sec-Fetch-Mode", "navigate");
+            request.AddHeader("Sec-Fetch-Site", "same-origin");
+            request.AddHeader("Sec-Fetch-User", "?1");
+            request.AddHeader("Sec-GPC", "1");
+            request.AlwaysMultipartFormData = true;
+            request.AddParameter("__RequestVerificationToken", "6vJt-f-r_oVSrM4F36DYj6V43DQvTzljggcYbAcNeBpWUxk0UFGWaiYQpLt9wlE5T15Q0zNjPNx4jHE0sah0rtRCKNIKO1LmvMQw8qBBUG81");
+            var today = DateTime.Now.ToString("yyyy/MM/dd", new CultureInfo("fa-IR"));
+
+            request.AddParameter("StartTime", "1401/06/12");
+            request.AddParameter("EndTime", today);
+            request.AddParameter("myTable_length", "100");
+
+            RestResponse response = await client.ExecuteAsync(request);
+            using (
+                StreamWriter sw =
+                    new(
+                       path: Path.Combine(
+                            _environment.WebRootPath,
+                            "Resources",
+                            "votes",
+                            "index.html"
+                        )
+                       ,
+                       append: false
+                        , encoding: Encoding.UTF8
+                    )
+            )
+            {
+                var res = response.Content;
+
+
+                await sw.WriteAsync(res);
+            }
+
+            return Ok();
+        }
+        [Authorize(Roles = "Admin")]
+        [HttpGet("Index2Json")]
+        public async Task<ActionResult> index2Json(
+            string from = "1401/12/21",
+            string to = "1500/01/01"
+        )
+        {
+            var from_ = from.persianDate2utc();
+            var to_ = to.persianDate2utc();
+            using (
+                var html = new StreamReader(
+                    Path.Combine(_environment.WebRootPath, "Resources", "votes", "index.html")
+                )
+            )
+            {
+                var hdoc = new HtmlDocument();
+                hdoc.Load(html);
+                var vote_sessions = hdoc.QuerySelectorAll("tr").Skip(1).ToList();
+                var data = vote_sessions
+                    .Select(x =>
+                    {
+                        var data = x.QuerySelectorAll("td").ToArray();
+                        var title = data[0].InnerText.s_();
+                        var time = data[1].InnerText.s_();
+                        var url = base_url + data[2].GetAttributeValue("href", "");
+
+                        return new
+                        {
+                            title,
+                            time,
+                            url,
+                            date_ = time.persianDate2utc()
+                        };
+                    })
+                    .Where(x => x.date_ >= from_ && x.date_ <= to_)
+                    .ToArray();
+
+                var json = Newtonsoft.Json.JsonConvert.SerializeObject(data, Newtonsoft.Json.Formatting.Indented);
+                using (
+                    var jsonsw = new StreamWriter(
+                        Path.Combine(_environment.WebRootPath, "Resources", "votes", "parsed.json")
+                    )
+                )
+
+                    await jsonsw.WriteAsync(json);
+            return Ok(json);
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 bin/
-appsettings.json
-bin/
+# appsettings.json
+obj/
 Migrations/ 
 website/

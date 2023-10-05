@@ -20,7 +20,11 @@ namespace trvotes.Controllers
         private DataContext _context;
         private readonly IWebHostEnvironment _environment;
 
-        public TrVotesController(ILogger<TrVotesController> logger, DataContext context, IWebHostEnvironment environment)
+        public TrVotesController(
+            ILogger<TrVotesController> logger,
+            DataContext context,
+            IWebHostEnvironment environment
+        )
         {
             _logger = logger;
             _context = context;
@@ -97,11 +101,10 @@ namespace trvotes.Controllers
                 .ToList();
             return Ok(data);
         }
-        
+
         [HttpGet("GetFirstVotesCount")]
         public async Task<ActionResult> GetFirstVotesCount()
         {
-            
             var data = await _context.Members
                 .GroupBy(x => x.jFirstVote)
                 .Select(x => new { date = x.Key ?? "", count = x.Count() })
@@ -111,11 +114,12 @@ namespace trvotes.Controllers
                 return NotFound();
             return Ok(data);
         }
+
         [HttpGet("GetMemberImage/{id}")]
-        public async Task<FileResult> GetMemberImage([FromRoute]int id)
+        public async Task<FileResult> GetMemberImage([FromRoute] int id)
         {
             string path = Path.Combine(_environment.WebRootPath, "images", $"{id}.jpg");
-            var imageFileStream =await System.IO.File.ReadAllBytesAsync(path);
+            var imageFileStream = await System.IO.File.ReadAllBytesAsync(path);
             return File(imageFileStream, "image/jpg");
         }
     }

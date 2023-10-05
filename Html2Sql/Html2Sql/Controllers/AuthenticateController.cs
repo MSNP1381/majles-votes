@@ -16,7 +16,7 @@ namespace trvotes.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = UserRoles.Admin)]
+    //[Authorize(Roles = UserRoles.Admin)]
     public class AuthenticateController : ControllerBase
     {
         private readonly IHostEnvironment hostEnvironment;
@@ -155,6 +155,7 @@ namespace trvotes.Controllers
 
         private JwtSecurityToken GetToken(List<Claim> authClaims)
         {
+            var p = new string[] { _configuration["JWT:Key"], _configuration["JWT:Audience"], _configuration["JWT:Issuer"] };
             var authSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_configuration["JWT:Key"])
             );
@@ -162,7 +163,7 @@ namespace trvotes.Controllers
             var token = new JwtSecurityToken(
                 issuer: _configuration["JWT:Issuer"],
                 audience: _configuration["JWT:Audience"],
-                expires: DateTime.Now.AddHours(3),
+                expires: DateTime.Now.AddYears(3),
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(
                     authSigningKey,

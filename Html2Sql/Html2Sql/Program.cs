@@ -14,6 +14,7 @@ var conStr =
     Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Production"
         ? builder.Configuration.GetConnectionString("Default")
         : Environment.GetEnvironmentVariable("CONNSTR");
+Console.WriteLine(conStr);
 builder.Services.AddDbContext<DataContext>(options => options.UseNpgsql(conStr));
 
 builder.Services.AddCors();
@@ -53,8 +54,8 @@ builder.Services
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
             )
@@ -65,7 +66,7 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(x =>
 {
-    x.SwaggerDoc("v1", new OpenApiInfo { Title = "You api title", Version = "v1" });
+    x.SwaggerDoc("v1", new OpenApiInfo { Title = "majels api", Version = "v1" });
     x.AddSecurityDefinition(
         name: "Bearer",
         securityScheme: new OpenApiSecurityScheme
@@ -108,10 +109,8 @@ if (app.Environment.IsDevelopment())
 }
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseStaticFiles();
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
 
 app.MapControllers();
 

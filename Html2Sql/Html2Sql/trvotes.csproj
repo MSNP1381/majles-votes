@@ -30,13 +30,15 @@
     <PackageReference Include="MongoDB.Driver.Core" Version="2.21.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.8" />
+    <PackageReference Include="RestSharp" Version="110.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageReference Include="Yaap.zhipwang" Version="0.6.6" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\" />
     <Folder Include="Services\" />
+    <Folder Include="wwwroot\Resources\votes\" />
+    <Folder Include="wwwroot\Resources\votes\pages\" />
   </ItemGroup>
 
 </Project>

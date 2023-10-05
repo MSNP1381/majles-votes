@@ -10,3 +10,4 @@ all_members/pages/*
 /all_members/news
 /votes.csv
 /Html2Sql/Html2Sql/appsettings.json
+/Html2Sql/Html2Sql/wwwroot/Resources

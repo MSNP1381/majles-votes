@@ -1,4 +1,5 @@
 ﻿using HtmlAgilityPack;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace Html2Sql.tools
@@ -11,6 +12,13 @@ namespace Html2Sql.tools
             new('ك', 'ک'),
             new('ة', 'ه')
         };
+
+        public static DateTime persianDate2utc(this string s)
+        {
+            CultureInfo persianCulture = new CultureInfo("fa-IR");
+            DateTime date = DateTime.ParseExact(s, "yyyy/MM/dd", persianCulture).ToUniversalTime();
+            return date;
+        }
 
         public static string arabic2per(this string s)
         {

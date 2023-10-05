@@ -1,41 +1,20 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
-
+name: CD-Liara
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
+    branches:
+      - main
 jobs:
-  build:
-
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 6.0.x
-    - name: Restore dependencies 
-      working-directory: ./Html2Sql/Html2Sql/
-      run: dotnet restore 
-    - name: Build
-      working-directory: ./Html2Sql/Html2Sql/
-      run: dotnet build --no-restore 
-
-    - name: Publish
-      env:
-        CONNSTR: ${{ secrets.CONNSTR }}
-      run: dotnet publish ./Html2Sql/Html2Sql/ -c Release -o website
-    # - name : Tree
-    #   run : tree -d .
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v3.1.3
-      with:
-        name: website
-        path: ./website/**
-        if-no-files-found: error
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - name: update-liara
+        env:
+          LIARA_TOKEN: ${{ secrets.LIARA_API_TOKEN }}
+        run: |
+          npm i -g @liara/cli@4
+          liara deploy --app="majles" --api-token="$LIARA_TOKEN" --detach
