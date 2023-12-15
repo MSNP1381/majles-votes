@@ -20,6 +20,11 @@ namespace Html2Sql
         {
             base.OnModelCreating(builder);
             builder.Entity<Vote>().Property(b => b.Id).UseIdentityAlwaysColumn();
+            builder.Entity<AllMembers>().Property(b => b.Id).UseIdentityAlwaysColumn();
+            builder.Entity<Member>().HasOne(e => e.state)
+            .WithOne(e => e.Member)
+            .HasForeignKey<TmpMemberState>(e => e.MemberId)
+            .IsRequired();
             builder.Entity<IdentityUserRole<string>>().HasKey(p => new { p.UserId, p.RoleId });
             builder.Entity<IdentityRole>().HasKey(p => new { p.Id, p.Name });
             builder.Entity<Vote>(b =>
@@ -34,5 +39,7 @@ namespace Html2Sql
         public DbSet<Vote> Votes { get; set; }
         public DbSet<VotingSession> VotingSessions { get; set; }
         public DbSet<AttendanceTypeTbl> AttendeceTypes { get; set; }
+        public DbSet<AllMembers> AllMembers { get; set; }
+        public DbSet<TmpMemberState> TmpMemberStates { get; set; }
     }
 }

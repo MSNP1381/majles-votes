@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.DotNet.Scaffolding.Shared.CodeModifier.CodeChange;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using NuGet.DependencyResolver;
 using RestSharp;
 using System;
@@ -74,7 +75,7 @@ namespace Html2Sql.Controllers
             );
         }
 
-        [HttpPut(Name = "")]
+        [HttpPut("PutGropuify")]
         public async Task<ActionResult> PutGropuify()
         {
             var l = await _context.VotingSessions.ToListAsync();
@@ -89,8 +90,8 @@ namespace Html2Sql.Controllers
             return Ok();
         }
 
-        [HttpGet("get")]
-        public async Task<ActionResult> Get()
+        [HttpGet("voteHtml2Sql")]
+        public async Task<ActionResult> Get(int skip_)
         {
             StreamReader r = new StreamReader(
                 Path.Combine(_environment.WebRootPath, "Resources", "votes", "parsed.json")
@@ -100,22 +101,27 @@ namespace Html2Sql.Controllers
             List<Item>? items = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Item>>(json);
             var len_item = items.Count();
             var f_it = DateTime.Now;
-            foreach (var i in items.Yaap())
+            int index = 0;
+            items.Skip(skip_);
+            foreach (var i in items)
             {
+                Console.WriteLine($"{index}/{items.Count} ,{(DateTime.Now -f_it).TotalSeconds}");
+
+                index++;
                 f_it = DateTime.Now;
                 //var i = items[index];
                 var id = i.url.Split("/").Last();
                 var jdate = i.time;
                 var hdoc = new HtmlDocument();
                 var html = new StreamReader(
-                    Path.Combine(
-                        _environment.WebRootPath,
-                        "Resources",
-                        "votes",
-                        "pages",
-                        "parsed.json"
-                    )
-                );
+      Path.Combine(
+          _environment.WebRootPath,
+          "Resources",
+          "votes",
+          "pages",
+          $"{id}.html"
+      )
+  );
                 hdoc.Load(html);
                 var vote_title = hdoc.QuerySelector(
                     "#page-wrapper > div.row > div.col-lg-12 > div > div.panel-footer"
@@ -190,8 +196,8 @@ namespace Html2Sql.Controllers
                     voting_ses.Votes.Add(vote);
                 }
                 await _context.AddAsync(voting_ses);
-                await _context.SaveChangesAsync();
             }
+                await _context.SaveChangesAsync();
             return Ok();
         }
 

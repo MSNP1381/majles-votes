@@ -10,6 +10,12 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Html2Sql
 {
+    public class Base
+    {
+        [Key]
+        public int Id { get; set; }
+        public DateTime EditTime { get; set; } = DateTime.UtcNow;
+    }
     public enum AttendanceType
     {
         absence,
@@ -35,10 +41,9 @@ namespace Html2Sql
         None,
     }
 
-    public class Member
+    public class Member:Base
     {
-        [Key]
-        public int Id { get; set; } = 0;
+
         public int MemId { get; set; }
         public string Name { get; set; }
         public string Family { get; set; }
@@ -67,6 +72,7 @@ namespace Html2Sql
         }
 
         public virtual List<Vote> Votes { get; set; }
+        public virtual TmpMemberState state { get; set; }
     }
 
     public class Token
@@ -75,10 +81,9 @@ namespace Html2Sql
         public DateTime ExpiryDate { get; set; }
     }
 
-    public class Vote
+    public class Vote:Base
     {
-        [Key]
-        public int Id { get; set; }
+
 
         public int MemberId { get; set; }
 
@@ -109,9 +114,9 @@ namespace Html2Sql
         public virtual VotingSession VotingSession { get; set; }
     }
 
-    public class VotingSession
+    public class VotingSession:Base
     {
-        public int Id { get; set; }
+  
         public string title { get; set; }
         public int Against { get; set; }
         public int Favor { get; set; }
@@ -133,7 +138,7 @@ namespace Html2Sql
         }
     }
 
-    public class AttendanceTypeTbl
+    public class AttendanceTypeTbl:Base
     {
         public int Id { get; set; }
         public string? type_value { get; set; }
@@ -247,6 +252,15 @@ namespace Html2Sql
         }
     }
 
+    public class AllMembers : Base
+    {
+        public int MemId { get; set; }
+        public string Name { get; set; }
+        public string Family { get; set; }
+        public string Region { get; set; }
+        public string ImageUrl { get; set; }
+        public bool IsClarified { get; set; }
+    }
     public class News_Speeches
     {
         public string Title { get; set; }
@@ -275,6 +289,17 @@ namespace Html2Sql
             set { }
         }
     }
+    public class TmpMemberState:Base
+    {
 
+        public int MemberId { get; set; }
+        [ForeignKey("MemberId")]
+        public virtual Member Member { get; set; }
+        public int Absence { get; set; } = 0;
+        public int NonParticipation { get; set; } = 0;
+        public int Against { get; set; } = 0;
+        public int Favor { get; set; } = 0;
+        public int Abstaining { get; set; } = 0;
+    }
     public class RegisterModel : IdentityUser { }
 }

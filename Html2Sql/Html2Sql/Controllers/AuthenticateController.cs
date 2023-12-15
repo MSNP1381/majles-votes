@@ -16,7 +16,7 @@ namespace trvotes.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize(Roles = UserRoles.Admin)]
+    [Authorize(Roles = UserRoles.Admin)]
     public class AuthenticateController : ControllerBase
     {
         private readonly IHostEnvironment hostEnvironment;
