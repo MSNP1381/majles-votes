@@ -17,5 +17,5 @@ public partial class AllMember
 
     public string ImageUrl { get; set; } = null!;
 
-    public string IsClarified { get; set; } = null!;
+    public char IsClarified { get; set; } = 'f';
 }

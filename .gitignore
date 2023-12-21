@@ -11,3 +11,5 @@ all_members/pages/*
 /votes.csv
 /Html2Sql/Html2Sql/appsettings.json
 /Html2Sql/Html2Sql/wwwroot/Resources
+*.ps1
+/Html2Sql/Html2Sql/command.ps1

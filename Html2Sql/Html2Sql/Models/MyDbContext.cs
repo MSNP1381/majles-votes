@@ -45,7 +45,6 @@ public partial class MyDbContext : DbContext
         modelBuilder.Entity<AttendeceType>(entity =>
         {
             entity.HasKey(x => x.Id);
-            entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.Property(e => e.TypeValue).HasColumnName("type_value");
         });
 

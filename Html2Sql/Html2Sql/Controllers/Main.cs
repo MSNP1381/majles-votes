@@ -27,22 +27,23 @@ namespace Html2Sql.Controllers
         private readonly ILogger<Main> _logger;
         private readonly MyDbContext _context;
         private readonly IWebHostEnvironment _environment;
-        string desktopPath;
 
         public Main(ILogger<Main> logger, MyDbContext context, IWebHostEnvironment? environment)
         {
             _logger = logger;
             _context = context;
             _environment = environment;
-            desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
 
-            //var l = utils.AttendanceTypeValues
-            //    .Select(x => new AttendanceTypeTbl { Id = x.Key, type_value = x.Value })
+            // var l = utils.AttendanceTypeValues.OrderBy(x=>x.Key)
+            //    .Select(x => new AttendeceType {
+            //     // Id = x.Key, 
+            //    TypeValue = x.Value })
             //    .ToList();
-            //_context.AttendeceTypes.RemoveRange(_context.AttendeceTypes);
+            
+            // _context.AttendeceTypes.RemoveRange(_context.AttendeceTypes);
 
-            //context.AddRange(l);
-            //context.SaveChanges();
+            // context.AddRange(l);
+            // context.SaveChanges();
         }
 
         private AttendanceType Stat2enum(string stat)
@@ -103,7 +104,7 @@ namespace Html2Sql.Controllers
             var len_item = items.Count();
             var f_it = DateTime.Now;
             int index = 0;
-            items=items.Skip(skip_).ToList();
+            items = items.Skip(skip_).ToList();
             foreach (var i in items)
             {
                 Console.WriteLine($"{index}/{items.Count} ,{(DateTime.Now - f_it).TotalSeconds}");
@@ -147,7 +148,7 @@ namespace Html2Sql.Controllers
                 };
                 int len_row = rows.Length;
                 var x_it = DateTime.Now;
-                var voteList= new List<Vote>();
+                var voteList = new List<Vote>();
                 for (var index_r = 0; index_r < len_row; index_r++)
                 {
                     //Console.Write('\t');
@@ -193,9 +194,9 @@ namespace Html2Sql.Controllers
                         Activity = (int)stat,
                         Jdate = jdate,
                         Member = member,
-                    VotingSession = voting_ses
+                        VotingSession = voting_ses
                     };
-                    
+
                     voteList.Add(vote);
                 }
                 await _context.AddAsync(voting_ses);
@@ -204,9 +205,9 @@ namespace Html2Sql.Controllers
 
                 await _context.Votes.AddRangeAsync(voteList);
                 await _context.SaveChangesAsync();
-        
+
             }
-    
+
             return Ok();
         }
 
@@ -217,8 +218,8 @@ namespace Html2Sql.Controllers
             var t1 = await _context.Votes
                 .ToListAsync();
 
-               var t= t1.GroupBy(x => x.MemberId)
-                .Select(x => x.MinBy(y => y.Date));
+            var t = t1.GroupBy(x => x.MemberId)
+            .Select(x => x.MinBy(y => y.Date));
             var mem_date = t.Select(x =>
             {
                 var tmp = members_dct[x.MemberId];
@@ -226,7 +227,7 @@ namespace Html2Sql.Controllers
                 return tmp;
             });
             _context.UpdateRange(mem_date);
-             await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
             return Ok();
         }
 

@@ -37,10 +37,12 @@ namespace trvotes.Controllers
         [Authorize]
         public async Task<IEnumerable<VotingSession>> GetAllSessions(DateTime? from, DateTime? to)
         {
-            from = from ?? new DateTime(0);
-            to = to ?? DateTime.Now;
+            var from_ = from ?? new DateTime(0);
+            var jFrom= from_.ToString("yyyy/MM/dd",new CultureInfo("fa-IR"));
+            var to_ = to ?? DateTime.Now;
+            var jTo=to_.ToString("yyyy/MM/dd",new CultureInfo("fa-IR"));
             return await _context.VotingSessions
-                .Where(x => x.Date >= from && x.Date <= to)
+                .Where(x => string.Compare( x.Jdate,  jFrom)>=0 &&string.Compare( x.Jdate , jTo)<=0)
                 .ToListAsync();
         }
 
@@ -115,7 +117,7 @@ namespace trvotes.Controllers
             var all_Mems = _context.AllMembers.ToList();
             all_Mems.All(x =>
             {
-                x.IsClarified = okMems.GetValueOrDefault(x.MajCode, false)?"t":"f";
+                x.IsClarified = okMems.GetValueOrDefault(x.MajCode, false)?'t':'f';
                 return true;
             });
             _context.AllMembers.UpdateRange(all_Mems);
@@ -177,7 +179,7 @@ namespace trvotes.Controllers
                             Abstaining = x.TmpMemberState.Abstaining,
                             Family = x.Family,
                             ImageUrl = x.ImageUrl,
-                            IsClarified = "t",
+                            IsClarified = 't',
                             MajCode = x.MajCode,
                             Name = x.Name,
                             Region = x.Region,
@@ -185,8 +187,7 @@ namespace trvotes.Controllers
                         }
                 )
                 .ToList();
-            var all_Mems = _context.AllMembers
-                .Where(x => x.IsClarified == "t")
+            var all_Mems = _context.AllMembers.Where(x => x.IsClarified =='f')
                 .ToArray()
                 .Select(
                     x =>
@@ -194,7 +195,7 @@ namespace trvotes.Controllers
                         {
                             MajCode = x.MajCode,
                             Family = x.Family,
-                            IsClarified = "f",
+                            IsClarified = x.IsClarified,
                             ImageUrl = x.ImageUrl,
                             Name = x.Name,
                             Region = x.Region,
