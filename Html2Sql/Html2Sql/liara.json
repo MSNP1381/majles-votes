@@ -1,0 +1,9 @@
+{
+    "platform": "netcore",
+    "netcore": {
+      "version": "8.0",
+      "csprojectFile": "./trvotes.csproj"
+    },
+    "app": "majles",
+    "port": 80
+}

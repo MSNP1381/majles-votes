@@ -1,0 +1,1 @@
+dotnet ef dbcontext scaffold 'Name=ConnectionStrings:Default' Microsoft.EntityFrameworkCore.SqlServer --table AllMembers --table VotingSessions --table  AttendeceTypes --table Members --table TmpMemberStates --table Votes --output-dir Models --force

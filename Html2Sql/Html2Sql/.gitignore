@@ -1,5 +1,8 @@
 bin/
+.vs/
 # appsettings.json
 obj/
 Migrations/ 
 website/
+Controllers/Main.cs
+wwwroot/Resources/

@@ -155,7 +155,12 @@ namespace trvotes.Controllers
 
         private JwtSecurityToken GetToken(List<Claim> authClaims)
         {
-            var p = new string[] { _configuration["JWT:Key"], _configuration["JWT:Audience"], _configuration["JWT:Issuer"] };
+            var p = new string[]
+            {
+                _configuration["JWT:Key"],
+                _configuration["JWT:Audience"],
+                _configuration["JWT:Issuer"]
+            };
             var authSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_configuration["JWT:Key"])
             );

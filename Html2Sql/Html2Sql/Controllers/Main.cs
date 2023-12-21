@@ -5,12 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.DotNet.Scaffolding.Shared.CodeModifier.CodeChange;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Newtonsoft.Json;
 using NuGet.DependencyResolver;
 using RestSharp;
 using System;
 using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
+using trvotes.Models;
 using Yaap;
 using Formatting = Newtonsoft.Json.Formatting;
 using Method = RestSharp.Method;
@@ -19,16 +21,15 @@ namespace Html2Sql.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-
     public class Main : ControllerBase
     {
         private string base_url = "https://trvotes.parliran.ir";
         private readonly ILogger<Main> _logger;
-        private readonly DataContext _context;
+        private readonly MyDbContext _context;
         private readonly IWebHostEnvironment _environment;
         string desktopPath;
 
-        public Main(ILogger<Main> logger, DataContext context, IWebHostEnvironment? environment)
+        public Main(ILogger<Main> logger, MyDbContext context, IWebHostEnvironment? environment)
         {
             _logger = logger;
             _context = context;
@@ -80,10 +81,10 @@ namespace Html2Sql.Controllers
         {
             var l = await _context.VotingSessions.ToListAsync();
             var index = 0;
-            var dis = l.Select(x => x.jdate).Distinct().ToDictionary(x => x, x => index++);
+            var dis = l.Select(x => x.Jdate).Distinct().ToDictionary(x => x, x => index++);
             for (var i = 0; i < l.Count; i++)
             {
-                l[i].group_id = dis[l[i].jdate];
+                l[i].GroupId = dis[l[i].Jdate];
             }
             _context.VotingSessions.UpdateRange(l);
             await _context.SaveChangesAsync();
@@ -102,10 +103,10 @@ namespace Html2Sql.Controllers
             var len_item = items.Count();
             var f_it = DateTime.Now;
             int index = 0;
-            items.Skip(skip_);
+            items=items.Skip(skip_).ToList();
             foreach (var i in items)
             {
-                Console.WriteLine($"{index}/{items.Count} ,{(DateTime.Now -f_it).TotalSeconds}");
+                Console.WriteLine($"{index}/{items.Count} ,{(DateTime.Now - f_it).TotalSeconds}");
 
                 index++;
                 f_it = DateTime.Now;
@@ -114,14 +115,14 @@ namespace Html2Sql.Controllers
                 var jdate = i.time;
                 var hdoc = new HtmlDocument();
                 var html = new StreamReader(
-      Path.Combine(
-          _environment.WebRootPath,
-          "Resources",
-          "votes",
-          "pages",
-          $"{id}.html"
-      )
-  );
+                    Path.Combine(
+                        _environment.WebRootPath,
+                        "Resources",
+                        "votes",
+                        "pages",
+                        $"{id}.html"
+                    )
+                );
                 hdoc.Load(html);
                 var vote_title = hdoc.QuerySelector(
                     "#page-wrapper > div.row > div.col-lg-12 > div > div.panel-footer"
@@ -140,12 +141,13 @@ namespace Html2Sql.Controllers
                     Abstaining = abstaining,
                     Favor = favor,
                     Against = against,
-                    title = vote_title,
-                    jdate = jdate,
+                    Title = vote_title,
+                    Jdate = jdate,
                     Votes = new()
                 };
                 int len_row = rows.Length;
                 var x_it = DateTime.Now;
+                var voteList= new List<Vote>();
                 for (var index_r = 0; index_r < len_row; index_r++)
                 {
                     //Console.Write('\t');
@@ -168,7 +170,7 @@ namespace Html2Sql.Controllers
                     var member = _context.Members.FirstOrDefault(
                         x =>
                             (x.Name == name && x.Family == family && city == x.Region)
-                            || x.MemId == mem_id
+                            || x.MajCode == mem_id
                     );
                     if (member == null)
                     {
@@ -177,46 +179,54 @@ namespace Html2Sql.Controllers
                         {
                             Name = name,
                             Family = family,
-                            MemId = mem_id,
+                            MajCode = mem_id,
                             //Image = b64Img,
                             ImageUrl = img_url,
                             Region = city,
                         };
                         var res = await _context.Members.AddAsync(member);
-                        if (res.State != Microsoft.EntityFrameworkCore.EntityState.Added)
-                            return StatusCode(501, member);
+                        await _context.SaveChangesAsync();
                     }
 
                     var vote = new Vote
                     {
-                        activity = stat,
-                        jdate = jdate,
-                        Member = member
+                        Activity = (int)stat,
+                        Jdate = jdate,
+                        Member = member,
+                    VotingSession = voting_ses
                     };
-                    voting_ses.Votes.Add(vote);
+                    
+                    voteList.Add(vote);
                 }
                 await _context.AddAsync(voting_ses);
-            }
                 await _context.SaveChangesAsync();
+
+
+                await _context.Votes.AddRangeAsync(voteList);
+                await _context.SaveChangesAsync();
+        
+            }
+    
             return Ok();
         }
 
         [HttpPost("AddFirstVoteDate")]
-        public ActionResult Post()
+        public async Task<ActionResult> Post()
         {
-            var members_dct = _context.Members.ToDictionary(x => x.Id, x => x);
-            var t = _context.Votes
-                .ToList()
-                .GroupBy(x => x.MemberId)
+            var members_dct = await _context.Members.ToDictionaryAsync(x => x.Id, x => x);
+            var t1 = await _context.Votes
+                .ToListAsync();
+
+               var t= t1.GroupBy(x => x.MemberId)
                 .Select(x => x.MinBy(y => y.Date));
             var mem_date = t.Select(x =>
             {
                 var tmp = members_dct[x.MemberId];
-                tmp.jFirstVote = x.jdate;
+                tmp.JFirstVote = x.Jdate;
                 return tmp;
             });
             _context.UpdateRange(mem_date);
-            _context.SaveChangesAsync();
+             await _context.SaveChangesAsync();
             return Ok();
         }
 
@@ -230,22 +240,28 @@ namespace Html2Sql.Controllers
         [HttpGet("GetIndex")]
         public async Task<ActionResult> get_index()
         {
-
             var options = new RestClientOptions("https://trvotes.parliran.ir")
             {
                 MaxTimeout = -1,
-                UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0",
+                UserAgent =
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/118.0",
             };
             var client = new RestClient(options);
             var request = new RestRequest("/", Method.Post);
-            request.AddHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8");
+            request.AddHeader(
+                "Accept",
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+            );
             request.AddHeader("Accept-Language", "en-US,en;q=0.5");
             request.AddHeader("Accept-Encoding", "gzip, deflate, br");
             request.AddHeader("Referer", "https://trvotes.parliran.ir/");
             request.AddHeader("Origin", "https://trvotes.parliran.ir");
             request.AddHeader("DNT", "1");
             request.AddHeader("Connection", "keep-alive");
-            request.AddHeader("Cookie", "__RequestVerificationToken=O0U-oVgKAhXKPUHpWrcuVWzl9V-SrSI_aOTPnhM9bRR4CdLUm87gFdG4syEMQ_vi2Txo_jAsIzr4dcbvMU5ipC_zLx8uzCO-gfylKp4A1aE1; AHAS=dxo3trt0fzfr2342se2rrtuz");
+            request.AddHeader(
+                "Cookie",
+                "__RequestVerificationToken=O0U-oVgKAhXKPUHpWrcuVWzl9V-SrSI_aOTPnhM9bRR4CdLUm87gFdG4syEMQ_vi2Txo_jAsIzr4dcbvMU5ipC_zLx8uzCO-gfylKp4A1aE1; AHAS=dxo3trt0fzfr2342se2rrtuz"
+            );
             request.AddHeader("Upgrade-Insecure-Requests", "1");
             request.AddHeader("Sec-Fetch-Dest", "document");
             request.AddHeader("Sec-Fetch-Mode", "navigate");
@@ -253,7 +269,10 @@ namespace Html2Sql.Controllers
             request.AddHeader("Sec-Fetch-User", "?1");
             request.AddHeader("Sec-GPC", "1");
             request.AlwaysMultipartFormData = true;
-            request.AddParameter("__RequestVerificationToken", "6vJt-f-r_oVSrM4F36DYj6V43DQvTzljggcYbAcNeBpWUxk0UFGWaiYQpLt9wlE5T15Q0zNjPNx4jHE0sah0rtRCKNIKO1LmvMQw8qBBUG81");
+            request.AddParameter(
+                "__RequestVerificationToken",
+                "6vJt-f-r_oVSrM4F36DYj6V43DQvTzljggcYbAcNeBpWUxk0UFGWaiYQpLt9wlE5T15Q0zNjPNx4jHE0sah0rtRCKNIKO1LmvMQw8qBBUG81"
+            );
             var today = DateTime.Now.ToString("yyyy/MM/dd", new CultureInfo("fa-IR"));
 
             request.AddParameter("StartTime", "1401/06/12");
@@ -264,26 +283,25 @@ namespace Html2Sql.Controllers
             using (
                 StreamWriter sw =
                     new(
-                       path: Path.Combine(
+                        path: Path.Combine(
                             _environment.WebRootPath,
                             "Resources",
                             "votes",
                             "index.html"
-                        )
-                       ,
-                       append: false
-                        , encoding: Encoding.UTF8
+                        ),
+                        append: false,
+                        encoding: Encoding.UTF8
                     )
             )
             {
                 var res = response.Content;
-
 
                 await sw.WriteAsync(res);
             }
 
             return Ok();
         }
+
         [Authorize(Roles = "Admin")]
         [HttpGet("Index2Json")]
         public async Task<ActionResult> index2Json(
@@ -321,7 +339,10 @@ namespace Html2Sql.Controllers
                     .Where(x => x.date_ >= from_ && x.date_ <= to_)
                     .ToArray();
 
-                var json = Newtonsoft.Json.JsonConvert.SerializeObject(data, Newtonsoft.Json.Formatting.Indented);
+                var json = Newtonsoft.Json.JsonConvert.SerializeObject(
+                    data,
+                    Newtonsoft.Json.Formatting.Indented
+                );
                 using (
                     var jsonsw = new StreamWriter(
                         Path.Combine(_environment.WebRootPath, "Resources", "votes", "parsed.json")
@@ -329,7 +350,7 @@ namespace Html2Sql.Controllers
                 )
 
                     await jsonsw.WriteAsync(json);
-            return Ok(json);
+                return Ok(json);
             }
         }
     }

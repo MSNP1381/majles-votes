@@ -12,10 +12,8 @@ namespace Html2Sql
 {
     public class Base
     {
-        [Key]
-        public int Id { get; set; }
-        public DateTime EditTime { get; set; } = DateTime.UtcNow;
     }
+
     public enum AttendanceType
     {
         absence,
@@ -40,40 +38,28 @@ namespace Html2Sql
         BoardDirector,
         None,
     }
+    
+//public partial class Member
+//{
+//    public int Id { get; set; }
 
-    public class Member:Base
-    {
+//    public int MajCode { get; set; }
 
-        public int MemId { get; set; }
-        public string Name { get; set; }
-        public string Family { get; set; }
-        public string Region { get; set; }
-        public string ImageUrl { get; set; }
-        public string? Image { get; set; }
-        public string? jFirstVote { get; set; }
-        public DateTime FirstVote
-        {
-            get
-            {
-                try
-                {
-                    CultureInfo persianCulture = new CultureInfo("fa-IR");
-                    DateTime persianDateTime = DateTime
-                        .ParseExact(jFirstVote, "yyyy/MM/dd", persianCulture)
-                        .ToUniversalTime();
-                    return persianDateTime;
-                }
-                catch
-                {
-                    return new DateTime(1970, 1, 1, 0, 0, 0).ToUniversalTime();
-                }
-            }
-            set { }
-        }
+//    public string Name { get; set; } = null!;
 
-        public virtual List<Vote> Votes { get; set; }
-        public virtual TmpMemberState state { get; set; }
-    }
+//    public string Family { get; set; } = null!;
+
+//    public string Region { get; set; } = null!;
+
+//    public string ImageUrl { get; set; } = null!;
+
+//    public string? Image { get; set; }
+
+//    public string? JFirstVote { get; set; }
+//    public virtual TmpMemberState state { get; set; }
+//    public virtual List<Vote> Votes { get; set; }
+
+//    }
 
     public class Token
     {
@@ -81,68 +67,71 @@ namespace Html2Sql
         public DateTime ExpiryDate { get; set; }
     }
 
-    public class Vote:Base
-    {
+    //public class Vote : Base
+    //{
+    //    [Key]
+    //    public int Id { get; set; }
+    //    public int ?MemberId { get; set; }
 
+    //    [ForeignKey("MemberId")]
+    //    public virtual Member? Member { get; set; }
 
-        public int MemberId { get; set; }
+    //    [JsonIgnore]
+    //    public AttendanceType activity { get; set; }
 
-        [ForeignKey("MemberId")]
-        public virtual Member Member { get; set; }
+    //    [NotMapped]
+    //    public string ActivityName { get; set; }
+    //    public string jdate { get; set; }
+    //    [NotMapped]
+    //    public DateTime Date
+    //    {
+    //        get
+    //        {
+    //            CultureInfo persianCulture = new CultureInfo("fa-IR");
+    //            DateTime persianDateTime = DateTime
+    //                .ParseExact(jdate, "yyyy/MM/dd", persianCulture)
+    //                .ToUniversalTime();
+    //            return persianDateTime;
+    //        }
+    //        set { }
+    //    }
+    //    public int? VotingSessionId { get; set; }
 
-        [JsonIgnore]
-        public AttendanceType activity { get; set; }
+    //    [ForeignKey("VotingSessionId")]
+    //    public virtual VotingSession? VotingSession { get; set; }
+    //}
 
-        [NotMapped]
-        public string ActivityName { get; set; }
-        public string jdate { get; set; }
-        public DateTime Date
-        {
-            get
-            {
-                CultureInfo persianCulture = new CultureInfo("fa-IR");
-                DateTime persianDateTime = DateTime
-                    .ParseExact(jdate, "yyyy/MM/dd", persianCulture)
-                    .ToUniversalTime();
-                return persianDateTime;
-            }
-            set { }
-        }
-        public int VotingSessionId { get; set; }
+    //public class VotingSession : Base
+    //{
+    //    [Key]
+    //    public int Id { get; set; }
+    //    public string title { get; set; }
+    //    public int Against { get; set; }
+    //    public int Favor { get; set; }
+    //    public int Abstaining { get; set; }
+    //    public string jdate { get; set; }
+    //    public int group_id { get; set; }
+    //    public virtual List<Vote> Votes { get; set; }
+    //    public DateTime Date
+    //    {
+    //        get
+    //        {
+    //            CultureInfo persianCulture = new CultureInfo("fa-IR");
+    //            DateTime persianDateTime = DateTime
+    //                .ParseExact(jdate, "yyyy/MM/dd", persianCulture)
+    //                .ToUniversalTime();
+    //            return persianDateTime;
+    //        }
+    //        set { }
+    //    }
+    //}
 
-        [ForeignKey("VotingSessionId")]
-        public virtual VotingSession VotingSession { get; set; }
-    }
-
-    public class VotingSession:Base
-    {
-  
-        public string title { get; set; }
-        public int Against { get; set; }
-        public int Favor { get; set; }
-        public int Abstaining { get; set; }
-        public string jdate { get; set; }
-        public int group_id { get; set; }
-        public virtual List<Vote> Votes { get; set; }
-        public DateTime Date
-        {
-            get
-            {
-                CultureInfo persianCulture = new CultureInfo("fa-IR");
-                DateTime persianDateTime = DateTime
-                    .ParseExact(jdate, "yyyy/MM/dd", persianCulture)
-                    .ToUniversalTime();
-                return persianDateTime;
-            }
-            set { }
-        }
-    }
-
-    public class AttendanceTypeTbl:Base
-    {
-        public int Id { get; set; }
-        public string? type_value { get; set; }
-    }
+    //public class AttendanceTypeTbl : Base
+    //{
+    //    [Key]
+    //    public int Id { get; set; }
+    //    public string? type_value { get; set; }
+    //}
 
     [NotMapped]
     public class MemeberDetails
@@ -252,15 +241,18 @@ namespace Html2Sql
         }
     }
 
-    public class AllMembers : Base
-    {
-        public int MemId { get; set; }
-        public string Name { get; set; }
-        public string Family { get; set; }
-        public string Region { get; set; }
-        public string ImageUrl { get; set; }
-        public bool IsClarified { get; set; }
-    }
+    //public class AllMembers : Base
+    //{
+    //    [Key]
+    //    public int Id { get; set; }
+    //    public int MajCode { get; set; }
+    //    public string Name { get; set; }
+    //    public string Family { get; set; }
+    //    public string Region { get; set; }
+    //    public string ImageUrl { get; set; }
+    //    public bool IsClarified { get; set; }
+    //}
+
     public class News_Speeches
     {
         public string Title { get; set; }
@@ -289,17 +281,21 @@ namespace Html2Sql
             set { }
         }
     }
-    public class TmpMemberState:Base
-    {
 
-        public int MemberId { get; set; }
-        [ForeignKey("MemberId")]
-        public virtual Member Member { get; set; }
-        public int Absence { get; set; } = 0;
-        public int NonParticipation { get; set; } = 0;
-        public int Against { get; set; } = 0;
-        public int Favor { get; set; } = 0;
-        public int Abstaining { get; set; } = 0;
-    }
+    //public class TmpMemberState : Base
+    //{
+    //    [Key]
+    //    public int Id { get; set; }
+    //    public int? MemberId { get; set; }
+
+    //    [ForeignKey("MemberId")]
+    //    public virtual Member? Member { get; set; }
+    //    public int Absence { get; set; } = 0;
+    //    public int NonParticipation { get; set; } = 0;
+    //    public int Against { get; set; } = 0;
+    //    public int Favor { get; set; } = 0;
+    //    public int Abstaining { get; set; } = 0;
+    //}
+
     public class RegisterModel : IdentityUser { }
 }

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Globalization;
 using trvotes.Interfaces;
 using NuGet.Packaging;
+using trvotes.Models;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -18,12 +19,12 @@ namespace trvotes.Controllers
     public class TrVotesController : ControllerBase
     {
         private ILogger<TrVotesController> _logger;
-        private DataContext _context;
+        private MyDbContext _context;
         private readonly IWebHostEnvironment _environment;
 
         public TrVotesController(
             ILogger<TrVotesController> logger,
-            DataContext context,
+            MyDbContext context,
             IWebHostEnvironment environment
         )
         {
@@ -55,11 +56,11 @@ namespace trvotes.Controllers
             var data = await _context.Members
                 .Include(x => x.Votes)
                 .ThenInclude(x => x.VotingSession)
-                .FirstOrDefaultAsync(x => x.MemId == memId);
+                .FirstOrDefaultAsync(x => x.MajCode == memId);
             data.Votes
                 .Where(x =>
                 {
-                    x.ActivityName = utils.AttendanceTypeValues[(int)x.activity];
+                    x.ActivityName = utils.AttendanceTypeValues[(int)x.Activity];
                     return true;
                 })
                 .ToList();
@@ -96,9 +97,10 @@ namespace trvotes.Controllers
             data.Votes
                 .Where(x =>
                 {
-                    x.ActivityName = utils.AttendanceTypeValues[(int)x.activity];
+                    x.ActivityName = utils.AttendanceTypeValues[(int)x.Activity];
                     return true;
-                }).OrderByDescending(x => x.jdate)
+                })
+                .OrderByDescending(x => x.Jdate)
                 .ToList();
             return Ok(data);
         }
@@ -106,40 +108,53 @@ namespace trvotes.Controllers
         [HttpPut("UpdateFirstVoteState")]
         public async Task<ActionResult> UpdateVoteState()
         {
-            var okMems = _context.Members.ToList().Select(x => x.MemId).ToDictionary(x => x, y => true);
+            var okMems = _context.Members
+                .ToList()
+                .Select(x => x.MajCode)
+                .ToDictionary(x => x, y => true);
             var all_Mems = _context.AllMembers.ToList();
             all_Mems.All(x =>
             {
-                x.IsClarified = okMems.GetValueOrDefault(x.MemId, false);
+                x.IsClarified = okMems.GetValueOrDefault(x.MajCode, false)?"t":"f";
                 return true;
             });
             _context.AllMembers.UpdateRange(all_Mems);
             await _context.SaveChangesAsync();
             return Ok();
         }
+
         [HttpPut("updateMembersState")]
         public async Task<ActionResult> UpdateAllMembersstate()
         {
-            await _context.Database.ExecuteSqlRawAsync("DELETE from \"public\".\"TmpMemberStates\"");
+            await _context.Database.ExecuteSqlRawAsync(
+                "USE [master];DELETE FROM [dbo].[TmpMemberStates];"
+            );
 
             var votes = await _context.Votes.Include(x => x.Member).ToListAsync();
             Dictionary<int, TmpMemberState> dict = new Dictionary<int, TmpMemberState>();
             foreach (var vote in votes)
-                dict[vote.Member.MemId] = new TmpMemberState { MemberId = vote.Member.MemId };
+                dict[vote.Member.MajCode] = new TmpMemberState { MemberId = vote.Member.MajCode };
             foreach (var vote in votes)
             {
-                var t = dict[vote.Member.MemId];
-                if (vote.activity == AttendanceType.against)t.Against++;
-                else if (vote.activity == AttendanceType.favor) t.Favor++;
-                else if (vote.activity == AttendanceType.nonParticipation) t.NonParticipation++;
-                else if (vote.activity == AttendanceType.absence) t.Absence++;
-                else if (vote.activity == AttendanceType.abstaining) t.Abstaining++;
+                var t = dict[vote.Member.MajCode];
+                if (vote.Activity == (int)AttendanceType.against)
+                    t.Against++;
+                else if (vote.Activity == (int)AttendanceType.favor)
+                    t.Favor++;
+                else if (vote.Activity == (int)AttendanceType.nonParticipation)
+                    t.NonParticipation++;
+                else if (vote.Activity == (int)AttendanceType.absence)
+                    t.Absence++;
+                else if (vote.Activity == (int)AttendanceType.abstaining)
+                    t.Abstaining++;
             }
-            var data = _context.Members.ToList().Select(x =>
-            {
-                x.state = dict[x.MemId];
-                return x;
-            });
+            var data = _context.Members
+                .ToList()
+                .Select(x =>
+                {
+                    x.TmpMemberState = dict[x.MajCode];
+                    return x;
+                });
             _context.Members.UpdateRange(data);
             await _context.SaveChangesAsync();
             return Ok();
@@ -148,42 +163,53 @@ namespace trvotes.Controllers
         [HttpGet("GetAllMembersWithVotes")]
         public async Task<ActionResult> GetAllMembersWithVotes()
         {
-            var data = _context.Members.Include(x=> x.state).ToList().Select(x => new IAllMembers
-            {
-
-                Absence = x.state.Absence,
-                Against = x.state.Against,
-                Favor = x.state.Favor,
-                NonParticipation = x.state.NonParticipation,
-                Abstaining = x.state.Abstaining,
-                Family = x.Family,
-                ImageUrl = x.ImageUrl,
-                IsClarified = true,
-                MemId = x.MemId,
-                Name = x.Name,
-                Region = x.Region,
-                jFirstVote=x.jFirstVote
-
-            }).ToList();
-            var all_Mems = _context.AllMembers.Where(x => x.IsClarified == false).ToArray().Select(x => new IAllMembers
-            {
-                MemId = x.MemId,
-                Family = x.Family,
-                IsClarified = false,
-                ImageUrl = x.ImageUrl,
-                Name = x.Name,
-                Region = x.Region,
-            }).ToArray();
+            var data = _context.Members
+                .Include(x => x.TmpMemberState)
+                .ToList()
+                .Select(
+                    x =>
+                        new IAllMembers
+                        {
+                            Absence = x.TmpMemberState.Absence,
+                            Against = x.TmpMemberState.Against,
+                            Favor = x.TmpMemberState.Favor,
+                            NonParticipation = x.TmpMemberState.NonParticipation,
+                            Abstaining = x.TmpMemberState.Abstaining,
+                            Family = x.Family,
+                            ImageUrl = x.ImageUrl,
+                            IsClarified = "t",
+                            MajCode = x.MajCode,
+                            Name = x.Name,
+                            Region = x.Region,
+                            jFirstVote = x.JFirstVote,
+                        }
+                )
+                .ToList();
+            var all_Mems = _context.AllMembers
+                .Where(x => x.IsClarified == "t")
+                .ToArray()
+                .Select(
+                    x =>
+                        new IAllMembers
+                        {
+                            MajCode = x.MajCode,
+                            Family = x.Family,
+                            IsClarified = "f",
+                            ImageUrl = x.ImageUrl,
+                            Name = x.Name,
+                            Region = x.Region,
+                        }
+                )
+                .ToArray();
             data.AddRange(all_Mems);
             return Ok(data);
         }
-
 
         [HttpGet("GetFirstVotesCount")]
         public async Task<ActionResult> GetFirstVotesCount()
         {
             var data = await _context.Members
-                .GroupBy(x => x.jFirstVote)
+                .GroupBy(x => x.JFirstVote)
                 .Select(x => new { date = x.Key ?? "", count = x.Count() })
                 .OrderBy(x => x.date)
                 .ToListAsync();
