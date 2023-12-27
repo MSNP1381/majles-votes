@@ -34,7 +34,7 @@ namespace trvotes.Controllers
         }
 
         [HttpGet]
-        [Authorize]
+        //[Authorize]
         public async Task<IEnumerable<VotingSession>> GetAllSessions(DateTime? from, DateTime? to)
         {
             var from_ = from ?? new DateTime(0);
@@ -165,9 +165,10 @@ namespace trvotes.Controllers
         [HttpGet("GetAllMembersWithVotes")]
         public async Task<ActionResult> GetAllMembersWithVotes()
         {
-            var data = _context.Members
+            var data2 = await _context.Members
                 .Include(x => x.TmpMemberState)
-                .ToList()
+                .ToListAsync()
+                var data=data2
                 .Select(
                     x =>
                         new IAllMembers
@@ -187,9 +188,9 @@ namespace trvotes.Controllers
                         }
                 )
                 .ToList();
-            var all_Mems = _context.AllMembers.Where(x => x.IsClarified =='f')
-                .ToArray()
-                .Select(
+            var all_Mems2 =await _context.AllMembers.Where(x => x.IsClarified == 'f').ToArrayAsync();
+
+            var all_Mems= all_Mems2.Select(
                     x =>
                         new IAllMembers
                         {

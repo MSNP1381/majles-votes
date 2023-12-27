@@ -9,7 +9,6 @@ var conStr =
         ? builder.Configuration.GetConnectionString("Default")
         : Environment.GetEnvironmentVariable("CONNSTR");
 Console.WriteLine(conStr);
-builder.Services.AddDbContext<MyDbContext>(options => { options.UseSqlServer(conStr); });
 
 builder.Services.AddCors();
 
@@ -29,6 +28,7 @@ builder.Services.AddCors();
 //    .AddEntityFrameworkStores<DataContext>();
 
 builder.Configuration.AddEnvironmentVariables();
+builder.Services.AddDbContext<MyDbContext>(options => { options.UseSqlServer(conStr); });
 builder.Services
     .AddControllers()
     .AddNewtonsoftJson(
